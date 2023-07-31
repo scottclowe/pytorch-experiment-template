@@ -131,7 +131,6 @@ When creating a new repository from this template, these are the steps to follow
 
         sed -i "s/package_name/$PACKAGE_NAME/" setup.py \
             docs/source/conf.py \
-            CHANGELOG.rst \
             .github/workflows/test*.yaml
 
     Which will make changes in the following places.
@@ -164,9 +163,6 @@ When creating a new repository from this template, these are the steps to follow
       git add .
       git commit -m "Initialise project from template repository"
       git push
-
-When it comes time to make your first release, make sure you update the placeholder entry in CHANGELOG.rst to contain the correct details.
-You'll need to change ``YYYY-MM-DD`` to the actual release date, and change the URL to point to your release.
 
 
 Features

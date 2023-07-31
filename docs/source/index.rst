@@ -6,6 +6,5 @@
     :caption: Contents:
 
     packages/modules
-    changelog
     py-modindex
     genindex
