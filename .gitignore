@@ -1,4 +1,17 @@
 ##---------------------------------------------------
+# Model training .gitignore files
+##---------------------------------------------------
+
+checkpoints/
+checkpoints_finished/
+checkpoints_working/
+models/
+slogs/
+slogs-inner/
+slrm_auto_script/
+
+
+##---------------------------------------------------
 # Automated documentation .gitignore files
 ##---------------------------------------------------
 
