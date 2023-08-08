@@ -1,0 +1,278 @@
+#!/bin/bash
+#SBATCH --partition=t4v2            # Which node partitions to use. Use a comma-separated list if you don't mind which partition: t4v2,rtx6000,a40
+#SBATCH --nodes=1                   # Number of nodes to request. Can increase to --nodes=2, etc, for more GPUs (spread out over different nodes).
+#SBATCH --tasks-per-node=1          # Number of processes to spawn per node. Should always be set to 1, regardless of number of GPUs!
+#SBATCH --gres=gpu:1                # Number of GPUs per node. Can increase to --gres=gpu:2, etc, for more GPUs (together on the same node).
+#SBATCH --cpus-per-gpu=4            # Number of CPUs per GPU. Soft maximum of 4 per GPU requested on t4v2, 8 otherwise. Hard maximum of 32 per node.
+#SBATCH --mem-per-gpu=10G           # RAM per GPU. Soft maximum of 20G per GPU requested on t4v2, 41G otherwise. Hard maximum of 167G per node.
+#SBATCH --output=slogs/%x__%A_%a.out
+                                    # %x=job-name, %A=job ID, %a=array value, %n=node rank, %t=task rank, %N=hostname
+                                    # Note: You must create output directory "slogs" before launching job, otherwise it will immediately
+                                    # fail without an error message.
+                                    # Note: If you specify --output and not --error, then both STDOUT and STDERR will both be sent to the
+                                    # file specified by --output.
+#SBATCH --open-mode=append          # Use append mode otherwise preemption resets the checkpoint file.
+#SBATCH --qos=normal                # Quality of service. Sometimes you want to use high or deadline, but you can't use them all the time.
+                                    # you'll need to specify --account=deadline if you use --qos=deadline
+#SBATCH --job-name=template-experiment    # Set this to be a shorthand for your project's name.
+
+# Manually define the project name.
+# This must also be the name of your conda environment used for this project.
+PROJECT_NAME="template-experiment"
+# Automatically convert hyphens to underscores, to get the name of the project directory.
+PROJECT_DIRN="${PROJECT_NAME//-/_}"
+
+# Exit the script if any command hits an error
+set -e
+
+# sbatch script for Vector
+# Based on
+# https://github.com/VectorInstitute/TechAndEngineering/blob/master/benchmarks/resnet_torch/sample_script/script.sh
+# https://github.com/VectorInstitute/TechAndEngineering/blob/master/checkpoint_examples/PyTorch/launch_job.slrm
+# https://github.com/VectorInstitute/TechAndEngineering/blob/master/checkpoint_examples/PyTorch/run_train.sh
+
+# Store the time at which the script was launched, so we can measure how long has elapsed.
+start_time="$SECONDS"
+
+echo "Job $SLURM_JOB_NAME ($SLURM_JOB_ID) begins on $(hostname), submitted from $SLURM_SUBMIT_HOST ($SLURM_CLUSTER_NAME)"
+
+# Print slurm config report (SLURM environment variables, some of which we use later in the script)
+# By sourcing the script, we execute it as if its code were here in the script
+# N.B. This script only prints things out, it doesn't assign any environment variables.
+echo "Running slurm/utils/report_slurm_config.sh"
+source "slurm/utils/report_slurm_config.sh"
+# Print repo status report (current branch, commit ref, where any uncommitted changes are located)
+# N.B. This script only prints things out, it doesn't assign any environment variables.
+echo "Running slurm/utils/report_repo.sh"
+source "slurm/utils/report_repo.sh"
+echo ""
+echo "------------------------------------"
+echo "df -h:"
+df -h --output=target,pcent,size,used,avail,source | head -n 1
+df -h --output=target,pcent,size,used,avail,source | tail -n +2 | sort -h
+echo ""
+echo "-------- Input handling ------------------------------------------------"
+date
+echo ""
+# Use the SLURM job array to select the seed for the experiment
+SEED="$SLURM_ARRAY_TASK_ID"
+if [[ "$SEED" == "" ]];
+then
+    SEED=0
+fi
+echo "SEED = $SEED"
+
+# Any arguments provided to sbatch after the name of the slurm script will be
+# passed through to the main script later.
+# (The pass-through works like *args or **kwargs in python.)
+echo "Pass-through args: ${@}"
+echo ""
+echo "-------- Activating environment ----------------------------------------"
+date
+echo ""
+echo "Running ~/.bashrc"
+source ~/.bashrc
+echo ""
+# Activate virtual environment
+ENVNAME="$PROJECT_NAME"
+echo "Activating conda environment $ENVNAME"
+conda activate "$ENVNAME"
+echo ""
+# Print env status (which packages you have installed - useful for diagnostics)
+# N.B. This script only prints things out, it doesn't assign any environment variables.
+echo "Running slurm/utils/report_env_config.sh"
+source "slurm/utils/report_env_config.sh"
+
+# Set the JOB_LABEL environment variable
+# N.B. This script assigns the $JOB_LABEL environment variables that we use later.
+echo "Running slurm/utils/set_job-label.sh"
+source "slurm/utils/set_job-label.sh"
+
+# Set checkpoint directory ($CKPT_DIR) environment variables
+# N.B. This script assigns some environment variables ($CKPT_DIR) that we use later,
+# and initalizes our checkpoint output directory and adds a local symbolic link to it.
+echo "Running slurm/utils/set_output_paths_vector.sh"
+source "slurm/utils/set_output_paths_vector.sh"
+
+# Save a list of installed packages and their versions to a file in the output directory
+conda env export > "$CKPT_DIR/environment.yml"
+pip freeze > "$CKPT_DIR/frozen-requirements.txt"
+
+if [[ "$SLURM_RESTART_COUNT" > 0 && ! -f "$CKPT_DIR/checkpoint_latest.pt" ]];
+then
+    echo ""
+    echo "====================================================================="
+    echo "WARNING:"
+    echo "    Resuming after pre-emption (SLURM_RESTART_COUNT=$SLURM_RESTART_COUNT)"
+    echo "    but there is no checkpoint file at $CKPT_DIR/checkpoint_latest.pt"
+    echo "====================================================================="
+    echo ""
+fi;
+
+echo ""
+echo "-------- Begin main script ---------------------------------------------"
+date
+echo ""
+# Store the master node's IP address in the MASTER_ADDR environment variable.
+export MASTER_ADDR="$(hostname -s)"
+echo "Rank $SLURM_NODEID master node is at $MASTER_ADDR"
+
+# Get the address of a random available socket (aka port number).
+# By briefly opening the connection, the system is less likely to allocate
+# something else to the socket before we start using it for real.
+# https://unix.stackexchange.com/a/132524/
+JOB_SOCKET="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
+echo "Will use port $JOB_SOCKET for NCCL communication"
+
+if [[ "$SLURM_JOB_NUM_NODES" == "1" ]];
+then
+    # Single node configuration
+    # This is simpler than the multi-GPU configuration, as we only have to
+    # launch one train.py process.
+    echo ""
+    echo "Main script begins with host tcp://localhost:$JOB_SOCKET with backend NCCL"
+    echo "Single ($SLURM_JOB_NUM_NODES) node training ($SLURM_GPUS_ON_NODE GPUs)"
+    echo ""
+    #
+    # We just need to call the train.py script once and train.py will launch a
+    # process for each GPU on that node automatically.
+    #
+    # We pass the CKPT_DIR environment variable on as the output path for our
+    # python script, and also try to resume from a checkpoint in this directory
+    # in case of pre-emption. The python script should run from scratch if there
+    # is no checkpoint at this path to resume from.
+    #
+    # We pass on to train.py an arary of arbitrary extra arguments given to this
+    # slurm script contained in the $@ magic variable (i.e. "${@}")
+    #
+    # N.B. If you alter this, be sure to alter the multi-GPU implementation
+    # below too!
+    python "$PROJECT_DIRN/train.py" \
+        --rank=0 \
+        --dist-url="tcp://localhost:$JOB_SOCKET" \
+        --node-count="$SLURM_JOB_NUM_NODES" \
+        --workers="$SLURM_CPUS_ON_NODE" \
+        --seed="$SEED" \
+        --model-output-dir="$CKPT_DIR" \
+        --resume="$CKPT_DIR/checkpoint_latest.pt" \
+        --log-wandb \
+        --run-id="$JOB_LABEL" \
+        --disable-tqdm \
+        "${@}"
+
+else
+    # Multi-GPU configuration
+    echo ""
+    echo "Main script begins with host tcp://${MASTER_ADDR}:$JOB_SOCKET with backend NCCL"
+    echo "Multiple ($SLURM_JOB_NUM_NODES) node training (x$SLURM_GPUS_ON_NODE GPUs per node)"
+    echo ""
+    # export NCCL_DEBUG=INFO  # Enable this to debug NCCL errors
+    export NCCL_BLOCKING_WAIT=1  # Set this when using the NCCL backend for inter-GPU communication.
+    export NCCL_IB_DISABLE=1
+    #
+    # Make a shell script that calls our main.py script. The shell script
+    # will have variables written to it from this process, but will use its
+    # own SLURM environment variable to determine its rank.
+    # We do this by defining and then calling a worker_command fuction so we can
+    # more easily decide where to pipe its output. The main worker has its
+    # output piped to the main output file, whilst other workers pipe their
+    # outputs to their own files in the slogs-inner directory.
+    #
+    # N.B. If you alter the command to write the script below, be sure to alter
+    # the single-GPU implementation above too!
+    mkdir -p slrm_auto_script
+    worker_script="slrm_auto_script/srun_worker_${JOB_LABEL}.sh"
+    if [ "$SBATCH_OUTPUT" != "" ];
+    then
+        :  # pass
+    elif [ "$SLURM_ARRAY_TASK_COUNT" != "" ];
+    then
+        SBATCH_OUTPUT="slogs/${SLURM_JOB_NAME}__${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out";
+    else
+        SBATCH_OUTPUT="slogs/${SLURM_JOB_NAME}__${SLURM_JOB_ID}_4294967294.out";
+    fi
+    OUTPUT_BASE="${SBATCH_OUTPUT##*/}"
+    OUTPUT_STEM="${OUTPUT_BASE%.*}"
+    OUTPUT_EXTN="${OUTPUT_BASE##*.}"
+    cat > "$worker_script" <<- EOM
+sleep \$(( SLURM_PROCID * 5 ))
+worker_command() {
+    python $PROJECT_DIRN/train.py \
+--rank="\${SLURM_PROCID}" \
+--dist-url="tcp://${MASTER_ADDR}:${JOB_SOCKET}" \
+--node-count="$SLURM_JOB_NUM_NODES" \
+--workers="$SLURM_CPUS_ON_NODE" \
+--seed="$SEED" \
+--model-output-dir="$CKPT_DIR" \
+--resume="$CKPT_DIR/checkpoint_latest.pt" \
+--log-wandb \
+--run-id="$JOB_LABEL" \
+--disable-tqdm \
+${@}
+}
+OUTPUT_FNAME="slogs-inner/${OUTPUT_STEM}-r\${SLURM_PROCID}.${OUTPUT_EXTN}"
+if (( SLURM_PROCID  == 0 )); then
+    worker_command | tee -a "\$OUTPUT_FNAME"
+else
+    worker_command >> "\$OUTPUT_FNAME"
+fi
+EOM
+    # Create a log directory for our inner tasks to write their outputs to.
+    mkdir -p slogs-inner
+    echo ""
+    echo "Will execute $worker_script on $SLURM_JOB_NUM_NODES nodes, with contents:"
+    cat "$worker_script"
+    echo ""
+    # By executing srun inside a slurm script, we initiate one srun instance
+    # for every task we created in the SLURM header. Since we asked for one
+    # task per node, each of these will run this command. The main worker
+    # wrote the srun_worker_JOBLABEL.sh script and fixed the variables that
+    # the other nodes need to know so they can communicate with each other.
+    # Once train.py is run on each node, it will handle spawning one process
+    # for each of the GPUs on the node.
+    srun --nodes="$SLURM_JOB_NUM_NODES" bash "$worker_script"
+
+fi
+
+echo ""
+echo "------------------------------------"
+elapsed=$(( SECONDS - start_time ))
+eval "echo Running total elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
+echo ""
+# By overriding the JOB_OUTPUT_DIR environment variable, we disable saving
+# checkpoints to long-term storage. This is disabled by default to preserve
+# disk space. When you are sure your job config is correct and you are sure
+# you need to save your checkpoints for posterity, comment out this line.
+JOB_OUTPUT_DIR=""
+#
+if [[ "$CKPT_DIR" == "" ]];
+then
+    # This shouldn't ever happen, but we have a check for just in case.
+    # If $CKPT_DIR were somehow not set, we would mistakenly try to copy far
+    # too much data to $JOB_OUTPUT_DIR.
+    echo "CKPT_DIR is unset. Will not copy outputs to $JOB_OUTPUT_DIR."
+elif [[ "$JOB_OUTPUT_DIR" == "" ]];
+then
+    echo "JOB_OUTPUT_DIR is unset. Will not copy outputs from $CKPT_DIR."
+else
+    echo "-------- Saving outputs for long term storage --------------------------"
+    date
+    echo ""
+    echo "Copying outputs from $CKPT_DIR to $JOB_OUTPUT_DIR"
+    mkdir -p "$JOB_OUTPUT_DIR"
+    rsync -rutlzv "$CKPT_DIR/" "$JOB_OUTPUT_DIR/"
+    echo ""
+    echo "Output contents of ${JOB_OUTPUT_DIR}:"
+    ls -lh "$JOB_OUTPUT_DIR"
+    # Set up a symlink to the long term storage directory
+    ln -sfn "$OUTPUT_DIR" "checkpoints_finished"
+fi
+echo ""
+echo "------------------------------------------------------------------------"
+echo ""
+echo "Job $SLURM_JOB_NAME ($SLURM_JOB_ID) finished, submitted from $SLURM_SUBMIT_HOST ($SLURM_CLUSTER_NAME)"
+date
+echo "------------------------------------"
+elapsed=$(( SECONDS - start_time ))
+eval "echo Total elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
+echo "========================================================================"

@@ -1,0 +1,62 @@
+#!/bin/bash
+#SBATCH --partition=interactive     # Interactive Jupyter notebooks should be on the interactive partition
+#SBATCH --nodes=1                   # Number of nodes to request. Usually use 1 for interactive jobs.
+#SBATCH --tasks-per-node=1          # Number of processes to spawn per node. Should always be set to 1, regardless of number of GPUs!
+#SBATCH --gres=gpu:1                # Number of GPUs per node to request
+#SBATCH --cpus-per-gpu=4            # Number of CPUs to request per GPU (soft maximum of 4 per GPU requested)
+#SBATCH --mem-per-gpu=10G           # RAM per GPU
+#SBATCH --output=jnb_%j.log         # You'll need to inspect this log file to find out how to connect to the notebook
+#SBATCH --qos=nopreemption          # Only the nopreemption QOS is valid for the interactive partition
+#SBATCH --time=03:00:00             # You must specify a maximum run-time for interactive jobs (up to 3h)
+#SBATCH --job-name=jnb
+
+
+# Manually define the project name.
+# This should also be the name of your conda environment used for this project.
+PROJECT_NAME="template-experiment"
+
+# Exit if any command hits an error
+set -e
+
+# Store the time at which the script was launched
+start_time="$SECONDS"
+
+echo "Job $SLURM_JOB_NAME ($SLURM_JOB_ID) begins on $(hostname), submitted from $SLURM_SUBMIT_HOST ($SLURM_CLUSTER_NAME)"
+
+# Print slurm config report
+echo "Running slurm/utils/report_slurm_config.sh"
+source "slurm/utils/report_slurm_config.sh"
+
+echo ""
+echo "-------- Activating environment ----------------------------------------"
+date
+echo ""
+echo "Running ~/.bashrc"
+source ~/.bashrc
+echo ""
+# Activate virtual environment
+ENVNAME="$PROJECT_NAME"
+echo "Activating environment $ENVNAME"
+conda activate "$ENVNAME"
+echo ""
+
+# Get the address of a random available socket (aka port number) to serve
+# the notebook on.
+# By briefly opening the connection, the system is less likely to allocate
+# something else to the socket before we start using it for real.
+# https://unix.stackexchange.com/a/132524/
+JOB_SOCKET="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
+echo "Will use port $JOB_SOCKET to serve the notebook"
+echo ""
+echo "-------- Connection instructions ---------------------------------------"
+echo ""
+echo "You should be able to access the notebook locally with the following commands:"
+echo ""
+echo "ssh ${USER}@v.vectorinstitute.ai -N -L 8887:$(hostname):${JOB_SOCKET}"
+echo "sensible-browser http://localhost:8887"
+echo "# Then enter the token printed below, or your password if you set one"
+echo ""
+echo "-------- Starting jupyter notebook -------------------------------------"
+date
+export XDG_RUNTIME_DIR=""
+jupyter notebook --ip 0.0.0.0 --port "$JOB_SOCKET"
