@@ -1,2 +1,6 @@
-numpy>=1.5.1
-scipy
+numpy
+scikit-learn>=1.2.1
+timm>=0.6.12
+torch>=1.12
+torchvision>=0.13
+tqdm
