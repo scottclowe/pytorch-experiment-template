@@ -1,6 +1,6 @@
-# `name` is the name of the package as used for `pip install package`
+# `name` is the name of the package as used for `pip install package` (use hyphens)
 name = "template-experiment"
-# `path` is the name of the package for `import package`
+# `path` is the name of the package for `import package` (use underscores)
 path = name.lower().replace("-", "_").replace(" ", "_")
 # Your version number should follow https://python.org/dev/peps/pep-0440 and
 # https://semver.org

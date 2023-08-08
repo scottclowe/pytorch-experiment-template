@@ -12,8 +12,8 @@ import torch
 import torch.optim
 from torch import nn
 
-from . import data_transformations, datasets, encoders, utils
-from .evaluation import evaluate
+from template_experiment import data_transformations, datasets, encoders, utils
+from template_experiment.evaluation import evaluate
 
 LATEST_CKPT_NAME = "checkpoint_latest.pt"
 BASE_BATCH_SIZE = 128
