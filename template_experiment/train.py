@@ -202,6 +202,9 @@ def run_one_worker(gpu, ngpus_per_node, config):
     print(classifier)
     print()
 
+    if config.workers is None:
+        config.workers = len(os.sched_getaffinity(0))
+
     if not torch.cuda.is_available():
         print("Using CPU (this will be slow)")
     elif config.distributed:
@@ -1132,8 +1135,7 @@ def get_parser():
     group.add_argument(
         "--workers",
         type=int,
-        default=0,
-        help="Number of CPU workers per node.",
+        help="Number of CPU workers per node. Default: number of CPU cores on node.",
     )
     group.add_argument(
         "--no-cuda",
