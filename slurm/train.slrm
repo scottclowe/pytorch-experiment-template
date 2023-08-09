@@ -11,6 +11,8 @@
                                     # fail without an error message.
                                     # Note: If you specify --output and not --error, then both STDOUT and STDERR will both be sent to the
                                     # file specified by --output.
+#SBATCH --array=0                   # Use array to run multiple jobs that are identical except for $SLURM_ARRAY_TASK_ID.
+                                    # We use this to set the seed. You can run multiple seeds with --array=0-4, for example.
 #SBATCH --open-mode=append          # Use append mode otherwise preemption resets the checkpoint file.
 #SBATCH --qos=normal                # Quality of service. Sometimes you want to use high or deadline, but you can't use them all the time.
                                     # you'll need to specify --account=deadline if you use --qos=deadline

@@ -147,11 +147,11 @@ When creating a new repository from this template, these are the steps to follow
             help="Name of project on wandb, where these runs will be saved.",
         )
 
-    - In ``slurm/train.slrm``, `L16 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/train.slrm#L16>`__::
+    - In ``slurm/train.slrm``, `L19 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/train.slrm#L19>`__::
 
         #SBATCH --job-name=template-experiment    # Set this to be a shorthand for your project's name.
 
-    - In ``slurm/train.slrm``, `L20 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/train.slrm#L20>`__::
+    - In ``slurm/train.slrm``, `L23 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/train.slrm#L23>`__::
 
         PROJECT_NAME="template-experiment"
 
