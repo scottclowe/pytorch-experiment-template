@@ -126,6 +126,12 @@ echo "Rank $SLURM_NODEID master node is at $MASTER_ADDR"
 JOB_SOCKET="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
 echo "Will use port $JOB_SOCKET for NCCL communication"
 
+# Our job requests a minimum number of CPUs per node, but we might have been
+# allocated more than that. ${SLURM_CPUS_ON_NODE} reflects the number of CPUs
+# actually allocated to this job. For reproducibility, we should only use
+# as many workers as the number of CPUs as we requested.
+NUM_WORKERS=$(( SLURM_GPUS_ON_NODE * SLURM_CPUS_PER_GPU ))
+
 if [[ "$SLURM_JOB_NUM_NODES" == "1" ]];
 then
     # Single node configuration
@@ -153,7 +159,7 @@ then
         --rank=0 \
         --dist-url="tcp://localhost:$JOB_SOCKET" \
         --node-count="$SLURM_JOB_NUM_NODES" \
-        --workers="$SLURM_CPUS_ON_NODE" \
+        --workers="$NUM_WORKERS" \
         --seed="$SEED" \
         --model-output-dir="$CKPT_DIR" \
         --resume="$CKPT_DIR/checkpoint_latest.pt" \
@@ -202,7 +208,7 @@ worker_command() {
 --rank="\${SLURM_PROCID}" \
 --dist-url="tcp://${MASTER_ADDR}:${JOB_SOCKET}" \
 --node-count="$SLURM_JOB_NUM_NODES" \
---workers="$SLURM_CPUS_ON_NODE" \
+--workers="$NUM_WORKERS" \
 --seed="$SEED" \
 --model-output-dir="$CKPT_DIR" \
 --resume="$CKPT_DIR/checkpoint_latest.pt" \
