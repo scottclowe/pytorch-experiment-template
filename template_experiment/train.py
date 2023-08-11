@@ -431,20 +431,25 @@ def run_one_worker(gpu, ngpus_per_node, config):
     if config.log_wandb and config.gpu_rank == 0:
         utils.init_or_resume_wandb_run(
             config.model_output_dir,
-            name=config.run_id,
+            name=config.run_name,
+            id=config.run_id,
             entity=config.wandb_entity,
             project=config.wandb_project,
             group=config.wandb_group,
             config=config,
         )
         # If a run_id was not supplied at the command prompt, wandb will
-        # generate a name. Let's use that as the run_id.
+        # generate a name. Let's use that as the run_name.
+        if config.run_name is None:
+            config.run_name = wandb.run.name
         if config.run_id is None:
-            config.run_id = wandb.run.name
+            config.run_id = wandb.run.id
 
-    # If we still don't have a run_id, generate one from the current time.
+    # If we still don't have a run name, generate one from the current time.
+    if config.run_name is None:
+        config.run_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if config.run_id is None:
-        config.run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        config.run_id = config.run_name
 
     # If an explicit model output directory was given, we will use that.
     # Otherwise, if there is a models_dir specified, we will create an output
@@ -453,7 +458,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     # output will be saved.
     if not config.model_output_dir and config.models_dir:
         config.model_output_dir = os.path.join(
-            config.models_dir, config.dataset_name, config.run_id
+            config.models_dir, config.dataset_name, config.run_name
         )
 
     if config.log_wandb and config.gpu_rank == 0:
@@ -1275,9 +1280,14 @@ def get_parser():
         help="Used to group wandb runs together, to run stats on them together.",
     )
     group.add_argument(
+        "--run-name",
+        type=str,
+        help="Human-readable identifier for the model run or job. Used to name the run on wandb.",
+    )
+    group.add_argument(
         "--run-id",
         type=str,
-        help="Unique identifier for the model run or job. Used to name the run on wandb.",
+        help="Unique identifier for the model run or job. Used as the run ID on wandb.",
     )
 
     return parser

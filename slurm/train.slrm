@@ -169,7 +169,8 @@ then
         --model-output-dir="$CKPT_DIR" \
         --resume="$CKPT_DIR/checkpoint_latest.pt" \
         --log-wandb \
-        --run-id="$JOB_LABEL" \
+        --run-name="$JOB_LABEL" \
+        --run-id="$JOB_ID" \
         "${@}"
 
 else
@@ -218,7 +219,8 @@ worker_command() {
 --model-output-dir="$CKPT_DIR" \
 --resume="$CKPT_DIR/checkpoint_latest.pt" \
 --log-wandb \
---run-id="$JOB_LABEL" \
+--run-name="$JOB_LABEL" \
+--run-id="$JOB_ID" \
 ${@}
 }
 OUTPUT_FNAME="slogs-inner/${OUTPUT_STEM}-r\${SLURM_PROCID}.${OUTPUT_EXTN}"
