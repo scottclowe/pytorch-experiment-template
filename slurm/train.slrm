@@ -48,11 +48,16 @@ source "slurm/utils/report_slurm_config.sh"
 echo "Running slurm/utils/report_repo.sh"
 source "slurm/utils/report_repo.sh"
 echo ""
-echo "------------------------------------"
-echo "df -h:"
-df -h --output=target,pcent,size,used,avail,source | head -n 1
-df -h --output=target,pcent,size,used,avail,source | tail -n +2 | sort -h
-echo ""
+if false; then
+    # Print disk usage report, to catch errors due to lack of file space.
+    # This is disabled by default to prevent confusing new users with too
+    # much output.
+    echo "------------------------------------"
+    echo "df -h:"
+    df -h --output=target,pcent,size,used,avail,source | head -n 1
+    df -h --output=target,pcent,size,used,avail,source | tail -n +2 | sort -h
+    echo ""
+fi
 echo "-------- Input handling ------------------------------------------------"
 date
 echo ""
