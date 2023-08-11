@@ -1190,15 +1190,6 @@ def get_parser():
         help="Number of batches between each print to STDOUT. Default: same as LOG_INTERVAL.",
     )
     group.add_argument(
-        "--disable-tqdm",
-        action="store_true",
-        help=(
-            "Disables the nice progress bars used by tqdm. Use --disable-tqdm"
-            " whenever you are saving the training print statements from"
-            " STDOUT to a log file."
-        ),
-    )
-    group.add_argument(
         "--log-wandb",
         action="store_true",
         help="Log results with Weights & Biases https://wandb.ai",
