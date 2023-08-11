@@ -574,11 +574,16 @@ RNG state
 
 All RNG states are configured based on the overall seed that is set with the
 ``--seed`` argument to ``train.py``.
-The default is ``--seed=0``, so all experiments will be reproducible by default.
 
-When running on SLURM with slurm/train.slrm, the seed is set to equal the
-`job array ID <slurm-job-array_>`_. This lets you run the same job with multiple
-seeds in one command.
+When running ``train.py`` directly, the seed is **not** set by default, so
+behaviour will not be reproducible.
+You will need to include the argument ``--seed=0`` (for example), to make sure
+your experiments are reproducible.
+
+When running on SLURM with slurm/train.slrm, the seed **is** set by default.
+The seed used is equal the `array ID <slurm-job-array_>`_ of the job.
+This configuration lets you easily run the same job with multiple seeds in one
+sbatch command.
 Our default job array in ``slurm/train.slrm`` is ``--array=0``, so only one job
 will be launched, and that job will use the default seed of ``0``.
 

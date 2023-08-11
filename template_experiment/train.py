@@ -1105,8 +1105,7 @@ def get_parser():
     group.add_argument(
         "--seed",
         type=int,
-        default=0,
-        help="Random number generator (RNG) seed. Default: %(default)s",
+        help="Random number generator (RNG) seed. Default: not controlled",
     )
     group.add_argument(
         "--deterministic",
