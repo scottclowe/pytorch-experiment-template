@@ -595,6 +595,10 @@ or to use seeds 42 and 888::
 
     sbatch --array=42,888 slurm/train.slrm
 
+or to use a randomly selected seed::
+
+    sbatch --array="$RANDOM" slurm/train.slrm
+
 The seed is used to set the following RNG states:
 
 - Each epoch gets its own RNG seed (derived from the overall seed and the epoch
