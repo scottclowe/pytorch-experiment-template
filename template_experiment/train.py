@@ -437,6 +437,19 @@ def run_one_worker(gpu, ngpus_per_node, config):
             project=config.wandb_project,
             group=config.wandb_group,
             config=config,
+            job_type="train",
+            tags=["prototype" if config.prototyping else "final"],
+            config_exclude_keys=[
+                "log_wandb",
+                "wandb_entity",
+                "wandb_project",
+                "wandb_group",
+                "node_rank",
+                "gpu_rank",
+                "gpu",
+                "run_name",
+                "run_id",
+            ],
         )
         # If a run_id was not supplied at the command prompt, wandb will
         # generate a name. Let's use that as the run_name.
