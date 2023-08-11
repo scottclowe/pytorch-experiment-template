@@ -640,18 +640,68 @@ def run_one_worker(gpu, ngpus_per_node, config):
     )
 
     # TEST ====================================================================
-    print(f"\nEvaluating final (epoch {config.epochs}) model on test set")
-    test_stats = evaluate(
+    print(f"\nEvaluating final model (epoch {config.epochs}) performance")
+    # Evaluate on test set
+    print("\nEvaluating final model on test set...")
+    eval_stats = evaluate(
         dataloader=dataloader_test,
         model=model,
         device=device,
         partition_name="Test",
         is_distributed=config.distributed,
     )
-
-    # Send test stats to wandb
+    # Send stats to wandb
     if config.log_wandb and config.gpu_rank == 0:
-        wandb.log({**{f"Test/{k}": v for k, v in test_stats.items()}}, step=total_step)
+        wandb.log(
+            {**{f"Eval/Test/{k}": v for k, v in eval_stats.items()}}, step=total_step
+        )
+
+    if distinct_val_test:
+        # Evaluate on validation set
+        print(f"\nEvaluating final model on {eval_set} set...")
+        eval_stats = evaluate(
+            dataloader=dataloader_val,
+            model=model,
+            device=device,
+            partition_name=eval_set,
+            is_distributed=config.distributed,
+        )
+        # Send stats to wandb
+        if config.log_wandb and config.gpu_rank == 0:
+            wandb.log(
+                {**{f"Eval/{eval_set}/{k}": v for k, v in eval_stats.items()}},
+                step=total_step,
+            )
+
+    # Create a copy of the train partition with evaluation transforms
+    # and a dataloader using the evaluation configuration (don't drop last)
+    print(
+        "\nEvaluating final model on train set under test conditions"
+        " (no augmentation, dropout, etc)..."
+    )
+    dataset_train_eval = datasets.fetch_dataset(
+        config.dataset_name,
+        config.data_dir,
+        prototyping=config.prototyping,
+        transform_train=eval_transform,
+        transform_eval=eval_transform,
+        download=config.allow_download_dataset,
+    )[0]
+    dataloader_train_eval = torch.utils.data.DataLoader(
+        dataset_train_eval, **test_kwargs
+    )
+    eval_stats = evaluate(
+        dataloader=dataloader_train_eval,
+        model=model,
+        device=device,
+        partition_name="Train",
+        is_distributed=config.distributed,
+    )
+    # Send stats to wandb
+    if config.log_wandb and config.gpu_rank == 0:
+        wandb.log(
+            {**{f"Eval/Train/{k}": v for k, v in eval_stats.items()}}, step=total_step
+        )
 
 
 def train_one_epoch(
