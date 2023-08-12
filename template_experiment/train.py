@@ -428,10 +428,16 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     # LOGGING =================================================================
     # Setup logging and saving
+
+    # If we're using wandb, initialize the run, or resume it if the job
+    # was preempted.
     if config.log_wandb and config.gpu_rank == 0:
+        wandb_run_name = config.run_name
+        if wandb_run_name is not None and config.run_id is not None:
+            wandb_run_name = f"{wandb_run_name}__{config.run_id}"
         utils.init_or_resume_wandb_run(
             config.model_output_dir,
-            name=config.run_name,
+            name=wandb_run_name,
             id=config.run_id,
             entity=config.wandb_entity,
             project=config.wandb_project,
@@ -471,7 +477,9 @@ def run_one_worker(gpu, ngpus_per_node, config):
     # output will be saved.
     if not config.model_output_dir and config.models_dir:
         config.model_output_dir = os.path.join(
-            config.models_dir, config.dataset_name, config.run_name
+            config.models_dir,
+            config.dataset_name,
+            f"{config.run_name}__{config.run_id}",
         )
 
     if config.log_wandb and config.gpu_rank == 0:

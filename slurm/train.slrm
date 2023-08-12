@@ -169,7 +169,7 @@ then
         --model-output-dir="$CKPT_DIR" \
         --resume="$CKPT_DIR/checkpoint_latest.pt" \
         --log-wandb \
-        --run-name="$JOB_LABEL" \
+        --run-name="$SLURM_JOB_NAME" \
         --run-id="$JOB_ID" \
         "${@}"
 
@@ -219,7 +219,7 @@ worker_command() {
 --model-output-dir="$CKPT_DIR" \
 --resume="$CKPT_DIR/checkpoint_latest.pt" \
 --log-wandb \
---run-name="$JOB_LABEL" \
+--run-name="$SLURM_JOB_NAME" \
 --run-id="$JOB_ID" \
 ${@}
 }
