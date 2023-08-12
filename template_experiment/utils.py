@@ -1,5 +1,7 @@
 import os
 import random
+import secrets
+import string
 
 import numpy as np
 import torch
@@ -125,6 +127,28 @@ def determine_epoch_seed(seed, epoch):
     for _ in range(epoch):
         epoch_seed = random.randint(0, 0xFFFF_FFFF_FFFF_FFFF)
     return epoch_seed
+
+
+def generate_id(length: int = 8) -> str:
+    """
+    Generate a random base-36 string of `length` digits.
+
+    Parameters
+    ----------
+    length : int, default=8
+        Length of the string to generate.
+
+    Returns
+    -------
+    id : str
+        The randomly generated id.
+    """
+    # Borrowed from https://github.com/wandb/wandb/blob/0e00efd/wandb/sdk/lib/runid.py
+    # under the MIT license.
+    # There are ~2.8T base-36 8-digit strings. If we generate 210k ids,
+    # we'll have a ~1% chance of collision.
+    alphabet = string.ascii_lowercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def count_parameters(model, only_trainable=True):

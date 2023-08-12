@@ -468,7 +468,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     if config.run_name is None:
         config.run_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if config.run_id is None:
-        config.run_id = config.run_name
+        config.run_id = utils.generate_id()
 
     # If an explicit model output directory was given, we will use that.
     # Otherwise, if there is a models_dir specified, we will create an output
