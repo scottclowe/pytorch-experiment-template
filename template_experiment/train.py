@@ -128,6 +128,63 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     print(f"Using device {device}")
 
+    # RESTORE OMITTED CONFIG FROM RESUMPTION ==================================
+    checkpoint = None
+    if not config.resume:
+        # Not trying to resume from a checkpoint
+        pass
+    elif not os.path.isfile(config.resume):
+        # Resuming was specified, but the checkpoint doesn't appear to exist
+        if config.model_output_dir and config.resume == os.path.join(
+            config.model_output_dir, LATEST_CKPT_NAME
+        ):
+            # Looks like we're trying to resume from the checkpoint that this job
+            # will itself create! Let's assume this is to let the job resume upon
+            # preemption, and it just hasn't been preempted yet.
+            print(
+                "Skipping premature resumption from preemption: no checkpoint file"
+                f" found at '{config.resume}'"
+            )
+        else:
+            # Looks like we're not trying to resume upon preemption, so this
+            # really is an error.
+            raise EnvironmentError(
+                f"Specified resume checkpoint file does not exist: '{config.resume}'"
+            )
+    else:
+        print(f"Loading resumption checkpoint '{config.resume}'")
+        # Map model parameters to be load to the specified gpu.
+        checkpoint = torch.load(config.resume, map_location=device)
+        keys = vars(get_parser().parse_args("")).keys()
+        keys = set(keys).difference(
+            [
+                "resume",
+                "gpu",
+                "rank",
+                "node_rank",
+                "gpu_rank",
+                "dist_backend",
+                "dist_url",
+                "node_count",
+                "workers",
+            ]
+        )
+        for key in keys:
+            if getattr(checkpoint["config"], key, None) is None:
+                continue
+            if getattr(config, key) is None:
+                setattr(config, key, getattr(checkpoint["config"], key, None))
+                print(
+                    f"  Restoring config value for {key} from checkpoint:",
+                    getattr(config, key),
+                )
+            else:
+                print(
+                    f"  Warning: config value for {key} differs from checkpoint:"
+                    f" {getattr(config, key)} (ours) vs"
+                    f" {getattr(checkpoint['config'], key)} (checkpoint)"
+                )
+
     # MODEL ===================================================================
 
     # Encoder -----------------------------------------------------------------
@@ -378,31 +435,12 @@ def run_one_worker(gpu, ngpus_per_node, config):
     n_samples_seen = 0
 
     best_stats = {"max_accuracy": 0, "best_epoch": 0}
-    if not config.resume:
-        # Not trying to resume from a checkpoint
-        pass
-    elif not os.path.isfile(config.resume):
-        # Resuming was specified, but the checkpoint doesn't appear to exist
-        if config.model_output_dir and config.resume == os.path.join(
-            config.model_output_dir, LATEST_CKPT_NAME
-        ):
-            # Looks like we're trying to resume from the checkpoint that this job
-            # will itself create! Let's assume this is to let the job resume upon
-            # preemption, and it just hasn't been preempted yet.
-            print(
-                "Skipping premature resumption from preemption: no checkpoint file"
-                f" found at '{config.resume}'"
-            )
-        else:
-            # Looks like we're not trying to resume upon preemption, so this
-            # really is an error.
-            raise EnvironmentError(
-                f"Specified resume checkpoint file does not exist: '{config.resume}'"
-            )
-    else:
-        print(f"Loading resumption checkpoint '{config.resume}'")
+
+    if checkpoint is not None:
+        print(
+            f"Loading state from checkpoint '{config.resume}' (epoch {checkpoint['epoch']})"
+        )
         # Map model to be loaded to specified single gpu.
-        checkpoint = torch.load(config.resume, map_location=device)
         resume_epoch = checkpoint["epoch"] + 1
         total_step = checkpoint["total_step"]
         n_samples_seen = checkpoint["n_samples_seen"]
@@ -412,9 +450,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
         scheduler.load_state_dict(checkpoint["scheduler"])
         best_stats["max_accuracy"] = checkpoint.get("max_accuracy", 0)
         best_stats["best_epoch"] = checkpoint.get("best_epoch", 0)
-        print(
-            f"Resuming from checkpoint '{config.resume}' (epoch {checkpoint['epoch']})"
-        )
 
     if config.start_epoch is not None:
         # A specified start_epoch will always override the resume epoch
