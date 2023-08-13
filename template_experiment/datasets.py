@@ -70,6 +70,11 @@ def image_dataset_sizes(dataset):
         img_size = 32
         num_channels = 3
 
+    elif dataset in ["imagenet", "imagenet1k", "ilsvrc2012"]:
+        num_classes = 1000
+        img_size = None
+        num_channels = 3
+
     elif dataset == "mnist":
         num_classes = 10
         img_size = 28
@@ -176,6 +181,25 @@ def fetch_dataset(
             train=False,
             transform=transform_eval,
             download=download,
+        )
+
+    elif dataset in ["imagenet", "imagenet1k", "ilsvrc2012"]:
+        if root:
+            pass
+        elif host == "vaughan":
+            root = "/scratch/ssd004/datasets/"
+        elif host == "mars":
+            root = "/scratch/gobi1/datasets/"
+        else:
+            root = "~/Datasets"
+        dataset_train = torchvision.datasets.ImageFolder(
+            os.path.join(root, "imagenet", "train"),
+            transform=transform_train,
+        )
+        dataset_val = None
+        dataset_test = torchvision.datasets.ImageFolder(
+            os.path.join(root, "imagenet", "val"),
+            transform=transform_train,
         )
 
     elif dataset == "mnist":
