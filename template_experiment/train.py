@@ -677,7 +677,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
         # Send training and eval stats for this epoch to wandb
         if config.log_wandb and config.gpu_rank == 0:
-            pre = "Training/epoch"
+            pre = "Training/epochwise"
             wandb.log(
                 {
                     **{f"{pre}/Train/{k}": v for k, v in train_stats.items()},
@@ -930,7 +930,7 @@ def train_one_epoch(
                 log_images = utils.concat_all_gather(log_images)
             if config.gpu_rank == 0:
                 wandb.log(
-                    {"Training/step/images/stimuli": wandb.Image(log_images)},
+                    {"Training/stepwise/images/stimuli": wandb.Image(log_images)},
                     step=total_step,
                 )
 
@@ -963,22 +963,22 @@ def train_one_epoch(
             # Throughput is the number of samples processed per second
             throughput = batch_size_all / (t_start_logging - t_end_batch)
             log_dict = {
-                "Training/step/epoch": epoch,
-                "Training/step/epoch_progress": epoch_progress,
-                "Training/step/throughput": throughput,
-                "Training/step/n_samples_seen": n_samples_seen,
-                "Training/step/train_loss": loss_batch,
-                "Training/step/accuracy": acc,
+                "Training/stepwise/epoch": epoch,
+                "Training/stepwise/epoch_progress": epoch_progress,
+                "Training/stepwise/throughput": throughput,
+                "Training/stepwise/n_samples_seen": n_samples_seen,
+                "Training/stepwise/train_loss": loss_batch,
+                "Training/stepwise/accuracy": acc,
             }
             # Track the learning rate of each parameter group
             for lr_idx in range(len(optimizer.param_groups)):
                 grp_name = optimizer.param_groups[lr_idx]["name"]
                 grp_lr = optimizer.param_groups[lr_idx]["lr"]
-                log_dict[f"Training/step/lr-{grp_name}"] = grp_lr
+                log_dict[f"Training/stepwise/lr-{grp_name}"] = grp_lr
             # Synchronize ensures everything has finished running on each GPU
             torch.cuda.synchronize()
             # Record how long it took to do each step in the pipeline
-            pre = "Training/step/duration"
+            pre = "Training/stepwise/duration"
             if t_start_wandb is not None:
                 # Record how long it took to send to wandb last time
                 log_dict[f"{pre}/wandb"] = t_end_wandb - t_start_wandb
