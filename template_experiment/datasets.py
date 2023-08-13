@@ -179,7 +179,11 @@ def fetch_dataset(
         )
 
     elif dataset == "mnist":
-        if not root:
+        if root:
+            pass
+        elif host == "vaughan":
+            root = "/scratch/ssd004/datasets/"
+        else:
             root = "~/Datasets"
         # Will read from [root]/MNIST/processed
         dataset_train = torchvision.datasets.MNIST(
