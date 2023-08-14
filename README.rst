@@ -91,7 +91,7 @@ When creating a new repository from this template, these are the steps to follow
     This can be done with the sed command::
 
         sed -i "s/template_experiment/$PROJECT_DIRN/" \
-            "$PROJECT_DIRN/*.py" setup.py docs/source/conf.py
+            "$PROJECT_DIRN/*.py" setup.py
         sed -i "s/template-experiment/$PROJECT_HYPH/" \
             "$PROJECT_DIRN/*.py" slurm/*.slrm
 
@@ -106,10 +106,6 @@ When creating a new repository from this template, these are the steps to follow
     - In ``__meta__.py``, `L2,4 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/__meta__.py#L2-4>`__::
 
         name = "template-experiment"
-
-    - In ``docs/source/conf.py``, `L27 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/docs/source/conf.py#L27>`__::
-
-        from template_experiment import __meta__ as meta  # noqa: E402 isort:skip
 
     - In ``train.py``, `L17-18 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L17-18>`__::
 
