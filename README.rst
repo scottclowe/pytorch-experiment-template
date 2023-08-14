@@ -532,12 +532,21 @@ between each category) along with a record of the conda environment and
 frozen pip requirements used to run the job in ``environment.yml`` and
 ``frozen-requirements.txt``.
 
+
+Log messages
+~~~~~~~~~~~~
+
 Any print statements and error messages from the training script will be saved
 to the file ``slogs/JOBNAME__JOBID_ARRAYID.out``.
 Only the output from the rank 0 worker (the worker which saves the
 checkpoints and sends logs to wandb) will be saved to this file.
 When using multiple nodes, the output from each node will be saved to a
 separate file: ``slogs-inner/JOBNAME__JOBID_ARRAYID-NODERANK.out``.
+
+You can monitor the progress of a job that is currently running by monitoring
+the contents of its log file. For example::
+
+    tail -n 50 -f slogs/JOBNAME__JOBID_ARRAYID.out
 
 
 Weights and Biases
