@@ -140,7 +140,7 @@ When creating a new repository from this template, these are the steps to follow
 
       git rm README.rst
       # touch README.rst
-      touch README.md
+      touch README.md && sed -i "s/.rst/.md/" MANIFEST.in
 
 #.  Add your changes to the repo's initial commit and force-push your changes::
 
