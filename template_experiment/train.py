@@ -953,9 +953,7 @@ def train_one_epoch(
         if (
             config.log_wandb
             and config.gpu_rank == 0
-            and (
-                batch_idx % config.log_interval == 0 or batch_idx == len(dataloader) - 1
-            )
+            and batch_idx % config.log_interval == 0
         ):
             # Create a log dictionary to send to wandb
             # Epoch progress interpolates smoothly between epochs
