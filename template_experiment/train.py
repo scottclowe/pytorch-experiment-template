@@ -326,12 +326,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
     if "std" in encoder_config:
         transform_args["std"] = encoder_config["std"]
 
-    if "interpolation" in encoder_config:
-        transform_args["interpolation"] = encoder_config["interpolation"]
-
-    if "crop_pct" in encoder_config:
-        transform_args["crop_pct"] = encoder_config["crop_pct"]
-
     train_transform, eval_transform = data_transformations.get_transform(
         config.transform_type, config.img_size, transform_args
     )
@@ -1075,7 +1069,7 @@ def get_parser():
     group.add_argument(
         "--transform-type",
         type=str,
-        default="barebones",
+        default="cifar",
         help="Name of augmentation stack to apply to training data. Default: %(default)s",
     )
     group.add_argument(

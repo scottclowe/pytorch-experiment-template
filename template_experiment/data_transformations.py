@@ -1,5 +1,5 @@
+import timm.data
 import torch
-from timm.data.transforms import _str_to_pil_interpolation
 from torchvision import transforms
 
 NORMALIZATION = {
@@ -20,87 +20,124 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
     if "std" in args:
         std = args["std"]
 
-    if transform_type == "imagenet":
-        interpolation = _str_to_pil_interpolation[args.get("interpolation", "bicubic")]
-        crop_pct = args.get("crop_pct", 0.875)
-        horz_flip = args.get("horz_flip", 0.5)
-
+    if transform_type == "noaug":
+        # If the training image is rectangular, there is a small "augmentation"
+        # as we will randomly crop a square (of length equal to the shortest
+        # side) from it to use as the input.
         train_transform = transforms.Compose(
             [
-                transforms.Resize(int(image_size / crop_pct), interpolation),
+                transforms.Resize(image_size),
                 transforms.RandomCrop(image_size),
-                transforms.RandomHorizontalFlip(p=horz_flip),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+                transforms.Normalize(mean=mean, std=std),
+            ]
+        )
+        test_transform = transforms.Compose(
+            [
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std),
             ]
         )
 
+    elif transform_type == "imagenet":
+        # Appropriate for really large natual images, as in ImageNet.
+        # For training:
+        # - Zoom in randomly with scale (big range of how much to zoom in)
+        # - Stretch with random aspect ratio
+        # - Flip horizontally
+        # - Randomly adjust brightness/contrast/saturation
+        # - (No rotation or skew)
+        # - Interpolation is randomly either bicubic or bilinear
+        train_transform = timm.data.create_transform(
+            input_size=image_size,
+            is_training=True,
+            scale=(0.08, 1.0),  # default imagenet scale range
+            ratio=(3.0 / 4.0, 4.0 / 3.0),  # default imagenet ratio range
+            hflip=0.5,
+            vflip=0.0,
+            color_jitter=0.4,
+            interpolation="random",
+            mean=mean,
+            std=std,
+        )
+        # For testing:
+        # - Zoom in 87.5%
+        # - Center crop
+        # - Interpolation is bilinear
         test_transform = transforms.Compose(
             [
-                transforms.Resize(int(image_size / crop_pct), interpolation),
+                transforms.Resize(int(image_size / 0.875)),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
             ]
         )
 
-    elif transform_type == "simple":
-        padding = args.get("padding", 4)
-        horz_flip = args.get("horz_flip", 0.5)
-
-        train_transform = transforms.Compose(
-            [
-                transforms.RandomCrop(image_size, padding=padding),
-                transforms.RandomHorizontalFlip(p=horz_flip),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
-            ]
+    elif transform_type == "cifar":
+        # Appropriate for smaller images, as in CIFAR-10/100.
+        # For training:
+        # - Zoom in randomly with scale (small range of how much to zoom in by)
+        # - Stretch with random aspect ratio
+        # - Flip horizontally
+        # - Randomly adjust brightness/contrast/saturation
+        # - (No rotation or skew)
+        train_transform = timm.data.create_transform(
+            input_size=image_size,
+            is_training=True,
+            scale=(0.7, 1.0),  # reduced scale range
+            ratio=(3.0 / 4.0, 4.0 / 3.0),  # default imagenet ratio range
+            hflip=0.5,
+            vflip=0.0,
+            color_jitter=0.4,  # default imagenet color jitter
+            interpolation="random",
+            mean=mean,
+            std=std,
         )
-
+        # For testing:
+        # - Resize to desired size only, with a center crop step included in
+        #   case the raw image was not square.
         test_transform = transforms.Compose(
             [
-                transforms.Resize((image_size, image_size)),
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
             ]
         )
 
-    elif transform_type == "scale-flip":
-        horz_flip = args.get("horz_flip", 0.5)
-
-        train_transform = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.RandomHorizontalFlip(p=horz_flip),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
-            ]
+    elif transform_type == "digits":
+        # Appropriate for smaller images containing digits, as in MNIST.
+        # - Zoom in randomly with scale (small range of how much to zoom in by)
+        # - Stretch with random aspect ratio
+        # - Don't flip the images (that would change the digit)
+        # - Randomly adjust brightness/contrast/saturation
+        # - (No rotation or skew)
+        train_transform = timm.data.create_transform(
+            input_size=image_size,
+            is_training=True,
+            scale=(0.7, 1.0),  # reduced scale range
+            ratio=(3.0 / 4.0, 4.0 / 3.0),  # default imagenet ratio range
+            hflip=0.0,
+            vflip=0.0,
+            color_jitter=0.4,  # default imagenet color jitter
+            interpolation="random",
+            mean=mean,
+            std=std,
         )
-
+        # For testing:
+        # - Resize to desired size only, with a center crop step included in
+        #   case the raw image was not square.
         test_transform = transforms.Compose(
             [
-                transforms.Resize((image_size, image_size)),
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
             ]
         )
 
-    elif transform_type == "barebones":
-        train_transform = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
-            ]
-        )
-
-        test_transform = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std),
-            ]
-        )
     else:
         raise NotImplementedError
 
