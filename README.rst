@@ -479,10 +479,11 @@ the following steps.
 
         ssh USERNAME@v.vectorinstitute.ai -N -L 8887:gpu026:47201
 
-   You need to replace USER with your Vector username, gpu026 with the node
+   You need to replace USERNAME with your Vector username, gpu026 with the node
    your job is running on, and 47201 with the port number from the previous
    step.
-   In this example, the local port being forwarded to is 8887.
+   In this example, the local port which the notebook is being forwarded to is
+   port 8887.
 
 #. Open a browser on your local machine and navigate to http://localhost:8887
    (or whatever port you chose in the previous step).::
@@ -491,9 +492,12 @@ the following steps.
 
    You should see the Jupyter notebook interface.
    Copy the token from the URL shown in the log file and paste it into the
-   ``"Password or token: [ ] Log in"`` box.
+   ``Password or token: [ ] Log in`` box.
+   You should now have access to the remote notebook server on your local
+   machine.
 
-#. Once you are done, make sure to end the job running the notebook with::
+#. Once you are done working in your notebooks (and have saved your changes),
+   make sure to end the job running the notebook with::
 
         scancel JOBID
 
