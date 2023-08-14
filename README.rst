@@ -652,7 +652,7 @@ overfitting the model selection on the test set.
 
 The image datasets implemented in ``template_experiment/datasets.py`` come with
 support for creating a validation set from the training set, which is separate
-from the test set. You should use this (with flag ``prototyping``) during the
+from the test set. You should use this (with flag ``--prototyping``) during the
 initial model development steps and for any hyperparameter searches.
 
 Your final models should be trained without ``--prototyping`` enabled, so that
