@@ -168,11 +168,11 @@ When creating a new repository from this template, these are the steps to follow
       # touch README.rst
       touch README.md
 
-#.  Commit and push your changes::
+#.  Add your changes to the repo's initial commit and force-push your changes::
 
       git add .
-      git commit -m "Initialise project from template repository"
-      git push
+      git commit --amend
+      git push --force
 
 .. _PEP-8: https://www.python.org/dev/peps/pep-0008/
 .. _open source license: https://choosealicense.com/
