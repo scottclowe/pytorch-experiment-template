@@ -47,28 +47,6 @@ When creating a new repository from this template, these are the steps to follow
         Note that this zip does not include the .gitignore and .gitattributes files (because GitHub automatically omits them, which is usually helpful but is not for our purposes).
         Thus you will also need to download the `.gitignore <https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitignore>`__ and `.gitattributes <https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitattributes>`__ files.
 
-        The following shell commands can be used for this purpose on \*nix systems::
-
-          git init your_repo_name
-          cd your_repo_name
-          wget https://github.com/scottclowe/pytorch-experiment-template/archive/master.zip
-          unzip master.zip
-          mv -n pytorch-experiment-template-master/* pytorch-experiment-template-master/.[!.]* .
-          rm -r pytorch-experiment-template-master/
-          rm master.zip
-          wget https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitignore
-          wget https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitattributes
-          git add .
-          git commit -m "Initial commit"
-          git rm LICENSE
-
-        Note that we are doing the move with ``mv -n``, which will prevent the template repository from clobbering your own files (in case you already made a README.rst file, for instance).
-
-        You'll need to instruct your new local repository to synchronise with the remote ``your_repo_url``::
-
-          git remote set-url origin your_repo_url
-          git push -u origin master
-
 #.  Delete the LICENSE file and replace it with a LICENSE file of your own choosing.
     If the code is intended to be freely available for anyone to use, use an `open source license`_, such as `MIT License`_ or `GPLv3`_.
     If you don't want your code to be used by anyone else, add a LICENSE file which just says:
