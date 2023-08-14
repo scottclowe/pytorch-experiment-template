@@ -45,7 +45,7 @@ When creating a new repository from this template, these are the steps to follow
         Alternatively, if your new repository is not going to be on GitHub, you can download `this repo as a zip <https://github.com/scottclowe/pytorch-experiment-template/archive/master.zip>`_ and work from there.
 
         Note that this zip does not include the .gitignore and .gitattributes files (because GitHub automatically omits them, which is usually helpful but is not for our purposes).
-        Thus you will also need to download the `.gitignore <https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitignore>`__ and `.gitattributes <https://raw.githubusercontent.com/scottclowe/pytorch-experiment-template/master/.gitattributes>`__ files.
+        Thus you will also need to download the `.gitignore <https://github.com/scottclowe/pytorch-experiment-template/blob/master/.gitignore>`__ and `.gitattributes <https://github.com/scottclowe/pytorch-experiment-template/blob/master/.gitattributes>`__ files.
 
 #.  Delete the LICENSE file and replace it with a LICENSE file of your own choosing.
     If the code is intended to be freely available for anyone to use, use an `open source license`_, such as `MIT License`_ or `GPLv3`_.
