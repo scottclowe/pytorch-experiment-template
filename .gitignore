@@ -3,7 +3,7 @@
 ##---------------------------------------------------
 
 checkpoints/
-checkpoints_finished/
+checkpoints_finished
 checkpoints_working/
 models/
 slogs/
