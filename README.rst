@@ -553,11 +553,17 @@ The training script will save a checkpoint every epoch, and will resume from
 this if the job is interrupted by preemption.
 
 The checkpoint for a job will be saved to the directory
-``/checkpoint/USERNAME/PROJECT_JOBNAME_JOBID``, along with a record of the
-conda environment and frozen pip requirements.
+``/checkpoint/USERNAME/PROJECT__JOBNAME__JOBID`` (with double-underscores
+between each category) along with a record of the conda environment and
+frozen pip requirements used to run the job in ``environment.yml`` and
+``frozen-requirements.txt``.
 
-Any print statements from the training script will be saved to the file
-``slogs/JOBNAME_JOBID-ARRAYID.out``.
+Any print statements and error messages from the training script will be saved
+to the file ``slogs/JOBNAME__JOBID_ARRAYID.out``.
+Only the output from the rank 0 worker (the worker which saves the
+checkpoints and sends logs to wandb) will be saved to this file.
+When using multiple nodes, the output from each node will be saved to a
+separate file: ``slogs-inner/JOBNAME__JOBID_ARRAYID-NODERANK.out``.
 
 
 Weights and Biases
