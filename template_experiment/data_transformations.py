@@ -88,6 +88,7 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
     elif transform_type == "barebones":
         train_transform = transforms.Compose(
             [
+                transforms.Resize((image_size, image_size)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -95,6 +96,7 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
 
         test_transform = transforms.Compose(
             [
+                transforms.Resize((image_size, image_size)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
