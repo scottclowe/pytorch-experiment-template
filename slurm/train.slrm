@@ -128,8 +128,8 @@ echo "Rank $SLURM_NODEID master node is at $MASTER_ADDR"
 # By briefly opening the connection, the system is less likely to allocate
 # something else to the socket before we start using it for real.
 # https://unix.stackexchange.com/a/132524/
-JOB_SOCKET="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
-echo "Will use port $JOB_SOCKET for NCCL communication"
+MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
+echo "Will use port $MASTER_PORT for NCCL communication"
 
 # Our job requests a minimum number of CPUs per node, but we might have been
 # allocated more than that. ${SLURM_CPUS_ON_NODE} reflects the number of CPUs
@@ -143,7 +143,7 @@ then
     # This is simpler than the multi-GPU configuration, as we only have to
     # launch one train.py process.
     echo ""
-    echo "Main script begins with host tcp://localhost:$JOB_SOCKET with backend NCCL"
+    echo "Main script begins with host tcp://localhost:$MASTER_PORT with backend NCCL"
     echo "Single ($SLURM_JOB_NUM_NODES) node training ($SLURM_GPUS_ON_NODE GPUs)"
     echo ""
     #
@@ -162,7 +162,7 @@ then
     # below too!
     python "$PROJECT_DIRN/train.py" \
         --rank=0 \
-        --dist-url="tcp://localhost:$JOB_SOCKET" \
+        --dist-url="tcp://localhost:$MASTER_PORT" \
         --node-count="$SLURM_JOB_NUM_NODES" \
         --workers="$NUM_WORKERS" \
         --seed="$SEED" \
@@ -176,7 +176,7 @@ then
 else
     # Multi-GPU configuration
     echo ""
-    echo "Main script begins with host tcp://${MASTER_ADDR}:$JOB_SOCKET with backend NCCL"
+    echo "Main script begins with host tcp://${MASTER_ADDR}:$MASTER_PORT with backend NCCL"
     echo "Multiple ($SLURM_JOB_NUM_NODES) node training (x$SLURM_GPUS_ON_NODE GPUs per node)"
     echo ""
     # export NCCL_DEBUG=INFO  # Enable this to debug NCCL errors
@@ -212,7 +212,7 @@ sleep \$(( SLURM_PROCID * 5 ))
 worker_command() {
     python $PROJECT_DIRN/train.py \
 --rank="\${SLURM_PROCID}" \
---dist-url="tcp://${MASTER_ADDR}:${JOB_SOCKET}" \
+--dist-url="tcp://${MASTER_ADDR}:${MASTER_PORT}" \
 --node-count="$SLURM_JOB_NUM_NODES" \
 --workers="$NUM_WORKERS" \
 --seed="$SEED" \
