@@ -681,6 +681,89 @@ with the ``--editable`` flag so the installed copy is updated automatically
 when you make changes to the codebase.
 
 
+Automated code checking and formatting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The template repository comes with a pre-commit_ stack.
+This is a set of git hooks which are executed every time you make a commit.
+The hooks catch errors as they occur, and will automatically fix some of these errors.
+
+To set up the pre-commit hooks, run the following code from within the repo directory::
+
+    pip install -r requirements-dev.txt
+    pre-commit install
+
+Whenever you try to commit code which is flagged by the pre-commit hooks,
+*the commit will not go through*. Some of the pre-commit hooks
+(such as black_, isort_) will automatically modify your code to fix formatting
+issues. When this happens, you'll have to stage the changes made by the commit
+hooks and then try your commit again. Other pre-commit hooks, such as flake8_,
+will not modify your code and will just tell you about issues in what you tried
+to commit (e.g. a variable was declared and never used), and you'll then have
+to manually fix these yourself before staging the corrected version.
+
+After installing it, the pre-commit stack will run every time you try to make
+a commit to this repository on that machine.
+You can also manually run the pre-commit stack on all the files at any time::
+
+    pre-commit run --all-files
+
+To force a commit to go through without passing the pre-commit hooks use the ``--no-verify`` flag::
+
+    git commit --no-verify
+
+The pre-commit stack which comes with the template is highly opinionated, and
+includes the following operations:
+
+- All **outputs in Jupyter notebooks are cleared** using nbstripout_.
+
+- Code is reformatted to use the black_ style.
+  Any code inside docstrings will be formatted to black using blackendocs_.
+  All code cells in Jupyter notebooks are also formatted to black using black_nbconvert_.
+
+- Imports are automatically sorted using isort_.
+
+- Entries in requirements.txt files are automatically sorted alphabetically.
+
+- Several `hooks from pre-commit <pre-commit-hooks_>`_ are used to screen for
+  non-language specific git issues, such as incomplete git merges, overly large
+  files being commited to the repo, bugged JSON and YAML files.
+
+- JSON files are also prettified automatically to have standardised indentation.
+
+The pre-commit stack will also run on github with one of the action workflows,
+which ensures the code that is pushed is validated without relying on every
+contributor installing pre-commit locally.
+
+This development practice of using pre-commit_, and standardizing the
+code-style using black_, is popular among leading open-source python projects
+including numpy, scipy, sklearn, Pillow, and many others.
+
+If you want to use pre-commit, but **want to commit outputs in Jupyter notebooks**
+instead of stripping them, simply remove the nbstripout_ hook from the
+`.pre-commit-config.yaml file <https://github.com/scottclowe/pytorch-experiment-template/blob/master/.pre-commit-config.yaml#L31-L35>`__
+and commit that change.
+
+If you don't want to use pre-commit at all, you can uninstall it::
+
+    pre-commit uninstall
+
+and purge it (along with black and flake8) from the repository::
+
+    git rm .pre-commit-config.yaml .flake8 .github/workflows/pre-commit.yaml
+    git commit -m "DEV: Remove pre-commit hooks"
+
+.. _black: https://github.com/psf/black
+.. _black_nbconvert: https://github.com/dfm/black_nbconvert
+.. _blackendocs: https://github.com/asottile/blacken-docs
+.. _flake8: https://gitlab.com/pycqa/flake8
+.. _isort: https://github.com/timothycrosley/isort
+.. _nbstripout: https://github.com/kynan/nbstripout
+.. _pre-commit: https://pre-commit.com/
+.. _pre-commit-hooks: https://github.com/pre-commit/pre-commit-hooks
+.. _pre-commit-py-hooks: https://github.com/pre-commit/pygrep-hooks
+
+
 Additional features
 -------------------
 
