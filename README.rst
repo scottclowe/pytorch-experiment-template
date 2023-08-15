@@ -562,8 +562,8 @@ If the job is preempted, the wandb logging will resume to the same wandb job
 ID instead of spawning a new one.
 
 
-RNG state
-~~~~~~~~~
+Random Number Generator (RNG) state
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 All RNG states are configured based on the overall seed that is set with the
 ``--seed`` argument to ``train.py``.
