@@ -674,6 +674,10 @@ def run_one_worker(gpu, ngpus_per_node, config):
             pre = "Training/epochwise"
             wandb.log(
                 {
+                    "Training/stepwise/epoch": epoch,
+                    "Training/stepwise/epoch_progress": epoch,
+                    "Training/stepwise/n_samples_seen": n_samples_seen,
+                    f"{pre}/epoch": epoch,
                     **{f"{pre}/Train/{k}": v for k, v in train_stats.items()},
                     **{f"{pre}/{eval_set}/{k}": v for k, v in eval_stats.items()},
                     **{f"{pre}/duration/{k}": v for k, v in timing_stats.items()},
