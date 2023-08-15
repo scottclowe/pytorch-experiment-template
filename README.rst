@@ -642,6 +642,45 @@ Your final models should be trained without ``--prototyping`` enabled, so that
 the full training set is used for training and the best model is produced.
 
 
+Optional extra package dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are several requirements files in the root directory of the repository.
+The idea is the requirements.txt file contains the minimal set of packages
+that are needed to use the models in the package.
+The other requirements files are for optional extra packages.
+
+requirements-dev.txt
+    Extra packages needed for code development (i.e. writing the codebase)
+
+requirements-notebook.txt
+    Extra packages needed for running the notebooks.
+
+requirements-train.txt
+    Extra packages needed for training the models.
+
+The setup.py file will automatically parse any requirements files in the
+root directory of the repository which are named like ``requirements-*.txt``
+and make them available to ``pip`` as extras.
+
+For example, to install the repository to your virtual environment with the
+extra packages needed for training::
+
+    pip install --editable .[train]
+
+You can also install all the extras at once::
+
+    pip install --editable .[all]
+
+Or you can install the extras directly from the requirements files::
+
+    pip install -r requirements-train.txt
+
+As a developer of the repository, you will need to pip install the package
+with the ``--editable`` flag so the installed copy is updated automatically
+when you make changes to the codebase.
+
+
 Additional features
 -------------------
 
