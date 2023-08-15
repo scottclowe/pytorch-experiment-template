@@ -221,19 +221,19 @@ def run_one_worker(gpu, ngpus_per_node, config):
             stacklevel=2,
         )
 
-    if config.img_size is None:
+    if config.image_size is None:
         if "input_size" in encoder_config:
-            config.img_size = encoder_config["input_size"][-1]
+            config.image_size = encoder_config["input_size"][-1]
             print(
-                f"Setting model input image size to encoder's expected input size: {config.img_size}"
+                f"Setting model input image size to encoder's expected input size: {config.image_size}"
             )
         else:
-            config.img_size = 224
-            print(f"Setting model input image size to default: {config.img_size}")
+            config.image_size = 224
+            print(f"Setting model input image size to default: {config.image_size}")
             if raw_img_size:
                 warnings.warn(
                     "Be aware that we are using a different input image size"
-                    f" ({config.img_size}px) to the raw image size in the"
+                    f" ({config.image_size}px) to the raw image size in the"
                     f" dataset ({raw_img_size}px).",
                     UserWarning,
                     stacklevel=2,
@@ -241,10 +241,10 @@ def run_one_worker(gpu, ngpus_per_node, config):
     elif (
         "input_size" in encoder_config
         and config.pretrained
-        and encoder_config["input_size"][-1] != config.img_size
+        and encoder_config["input_size"][-1] != config.image_size
     ):
         warnings.warn(
-            f"A different image size {config.img_size} than what the model was"
+            f"A different image size {config.image_size} than what the model was"
             f" pretrained with {encoder_config['input_size'][-1]} was suplied",
             UserWarning,
             stacklevel=2,
@@ -327,7 +327,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         transform_args["std"] = encoder_config["std"]
 
     train_transform, eval_transform = data_transformations.get_transform(
-        config.transform_type, config.img_size, transform_args
+        config.transform_type, config.image_size, transform_args
     )
 
     # Create the train and eval datasets, and get number of classes
@@ -1073,7 +1073,7 @@ def get_parser():
         help="Name of augmentation stack to apply to training data. Default: %(default)s",
     )
     group.add_argument(
-        "--img-size",
+        "--image-size",
         type=int,
         help="Size of images to use as model input. Default: encoder's default.",
     )
