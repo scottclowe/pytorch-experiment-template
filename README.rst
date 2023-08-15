@@ -584,9 +584,9 @@ sbatch command.
 Our default job array in ``slurm/train.slrm`` is ``--array=0``, so only one job
 will be launched, and that job will use the default seed of ``0``.
 
-To launch the same job 5 times, each with a different seed (0, 1, 2, 3, and 4)::
+To launch the same job 5 times, each with a different seed (1, 2, 3, 4, and 5)::
 
-    sbatch --array=0-4 slurm/train.slrm
+    sbatch --array=1-5 slurm/train.slrm
 
 or to use seeds 42 and 888::
 
