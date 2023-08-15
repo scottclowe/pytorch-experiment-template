@@ -138,6 +138,70 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
             ]
         )
 
+    elif transform_type == "autoaugment-imagenet":
+        # Augmentation policy learnt by AutoAugment, described in
+        # https://arxiv.org/abs/1805.09501
+        # The policies mostly concern changing the colours of the image,
+        # but there is a little rotation and shear too. We need to include
+        # our own random cropping, stretching, and flipping.
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomResizedCrop(
+                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
+                ),
+                transforms.AutoAugment(
+                    policy=transforms.AutoAugmentPolicy.IMAGENET,
+                    interpolation=transforms.InterpolationMode.BILINEAR,
+                ),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+        # For testing:
+        # - Zoom in 87.5%
+        # - Center crop
+        test_transform = transforms.Compose(
+            [
+                transforms.Resize(int(image_size / 0.875)),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+
+    elif transform_type == "autoaugment-cifar":
+        # Augmentation policy learnt by AutoAugment, described in
+        # https://arxiv.org/abs/1805.09501
+        # The policies mostly concern changing the colours of the image,
+        # but there is a little rotation and shear too. We need to include
+        # our own random cropping, stretching, and flipping.
+        train_transform = transforms.Compose(
+            [
+                transforms.AutoAugment(
+                    policy=transforms.AutoAugmentPolicy.CIFAR10,
+                    interpolation=transforms.InterpolationMode.BILINEAR,
+                ),
+                transforms.RandomResizedCrop(
+                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
+                ),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+        # For testing:
+        # - Resize to desired size only, with a center crop step included in
+        #   case the raw image was not square.
+        test_transform = transforms.Compose(
+            [
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+
     else:
         raise NotImplementedError
 
