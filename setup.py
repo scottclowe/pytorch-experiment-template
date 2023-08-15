@@ -114,4 +114,9 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
+    entry_points={
+        "console_scripts": [
+            "template-experiment-train=template_experiment.train:cli",
+        ],
+    },
 )

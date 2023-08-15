@@ -328,6 +328,10 @@ Example commands
 
         python template_experiment/train.py
 
+  or alternatively::
+
+        template-experiment-train
+
 - Run the default training command with on the cluster with SLURM.
   First, ssh into the cluster and cd to the project repository.
   You don't need to activate the project's conda environment.
