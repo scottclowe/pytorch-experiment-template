@@ -57,20 +57,18 @@ def evaluate(
             logits = model(stimuli)
             xent = F.cross_entropy(logits, y_true, reduction="sum")
             y_pred = torch.argmax(logits, dim=-1)
-            is_correct = y_pred == y_true
 
         if is_distributed:
             # Fetch results from other GPUs
             xent = torch.sum(utils.concat_all_gather(xent.reshape((1,))))
             y_true = utils.concat_all_gather_ragged(y_true)
             y_pred = utils.concat_all_gather_ragged(y_pred)
-            is_correct = utils.concat_all_gather_ragged(is_correct)
 
         y_true_all.append(y_true.cpu().numpy())
         y_pred_all.append(y_pred.cpu().numpy())
-        positives += torch.sum(is_correct).item()
+        positives += torch.sum(y_pred == y_true).item()
         total_xent += xent
-        total += is_correct.shape[0]
+        total += y_true.shape[0]
 
     # Take the mean of the cross-entropy
     xent = xent / total
