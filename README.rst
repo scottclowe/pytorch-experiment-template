@@ -112,7 +112,7 @@ When creating a new repository from this template, these are the steps to follow
         from template_experiment import data_transformations, datasets, encoders, utils
         from template_experiment.evaluation import evaluate
 
-    - In ``train.py``, `L1149 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L1149>`__::
+    - In ``train.py``, `L1321 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L1321>`__::
 
         group.add_argument(
             "--wandb-project",
