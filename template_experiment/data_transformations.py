@@ -258,6 +258,62 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
             ]
         )
 
+    elif transform_type == "trivialaugment-imagenet":
+        # Augmentation policy learnt by RandAugment, described in
+        # https://arxiv.org/abs/2103.10158
+        train_transform = transforms.Compose(
+            [
+                transforms.TrivialAugmentWide(
+                    interpolation=transforms.InterpolationMode.BILINEAR,
+                ),
+                transforms.RandomResizedCrop(
+                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
+                ),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+        # For testing:
+        # - Zoom in 87.5%
+        # - Center crop
+        test_transform = transforms.Compose(
+            [
+                transforms.Resize(int(image_size / 0.875)),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+
+    elif transform_type == "trivialaugment-cifar":
+        # Trivial augmentation policy, described in
+        # https://arxiv.org/abs/2103.10158
+        train_transform = transforms.Compose(
+            [
+                transforms.TrivialAugmentWide(
+                    interpolation=transforms.InterpolationMode.BILINEAR,
+                ),
+                transforms.RandomResizedCrop(
+                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
+                ),
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+        # For testing:
+        # - Resize to desired size only, with a center crop step included in
+        #   case the raw image was not square.
+        test_transform = transforms.Compose(
+            [
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
+            ]
+        )
+
     else:
         raise NotImplementedError
 
