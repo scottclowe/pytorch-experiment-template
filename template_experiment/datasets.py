@@ -75,6 +75,16 @@ def image_dataset_sizes(dataset):
         img_size = None
         num_channels = 3
 
+    elif dataset.startswith("imagenette"):
+        num_classes = 10
+        img_size = None
+        num_channels = 3
+
+    elif dataset.startswith("imagewoof"):
+        num_classes = 10
+        img_size = None
+        num_channels = 3
+
     elif dataset == "mnist":
         num_classes = 10
         img_size = 28
@@ -199,6 +209,40 @@ def fetch_dataset(
         dataset_val = None
         dataset_test = torchvision.datasets.ImageFolder(
             os.path.join(root, "imagenet", "val"),
+            transform=transform_train,
+        )
+
+    elif dataset == "imagenette":
+        if root:
+            root = os.path.join(root, "imagenette")
+        elif host == "vaughan":
+            root = "/scratch/ssd004/datasets/imagenette2/full/"
+        else:
+            root = "~/Datasets/imagenette/"
+        dataset_train = torchvision.datasets.ImageFolder(
+            os.path.join(root, "train"),
+            transform=transform_train,
+        )
+        dataset_val = None
+        dataset_test = torchvision.datasets.ImageFolder(
+            os.path.join(root, "val"),
+            transform=transform_train,
+        )
+
+    elif dataset == "imagewoof":
+        if root:
+            root = os.path.join(root, "imagewoof")
+        elif host == "vaughan":
+            root = "/scratch/ssd004/datasets/imagewoof2/full/"
+        else:
+            root = "~/Datasets/imagewoof/"
+        dataset_train = torchvision.datasets.ImageFolder(
+            os.path.join(root, "train"),
+            transform=transform_train,
+        )
+        dataset_val = None
+        dataset_test = torchvision.datasets.ImageFolder(
+            os.path.join(root, "val"),
             transform=transform_train,
         )
 
