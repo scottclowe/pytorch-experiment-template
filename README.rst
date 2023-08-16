@@ -297,15 +297,16 @@ replace ``template-experiment`` with the name of your package and
 Set-up
 ~~~~~~
 
-#. If you haven't already, then follow the Vector one-time set-up as above.
+#. If you haven't already, then follow the `Vector one-time set-up`_
+   instructions.
 
 #. Then clone the repository::
 
         git clone git@github.com:scottclowe/pytorch-experiment-template.git
         cd pytorch-experiment-template
 
-#. Run the project one-time set-up, as above (using template-experiment as the
-   environment name).
+#. Run the `Project one-time set-up`_ (using ``template-experiment`` as
+   the environment name).
 
 #. With the project's conda environment activated, install the package and its
    training dependencies::
