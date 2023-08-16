@@ -337,8 +337,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
         "prototyping": config.prototyping,
         "download": config.allow_download_dataset,
     }
-    if config.protoval_split is not None:
-        dataset_args["protoval_split"] = config.protoval_split
+    if config.protoval_split_id is not None:
+        dataset_args["protoval_split_id"] = config.protoval_split_id
     (
         dataset_train,
         dataset_val,
@@ -1044,7 +1044,7 @@ def get_parser():
     )
     group.add_argument(
         "--prototyping",
-        dest="protoval_split",
+        dest="protoval_split_id",
         nargs="?",
         const=0,
         type=int,
@@ -1358,7 +1358,8 @@ def cli():
     if config.disable_wandb:
         config.log_wandb = False
     del config.disable_wandb
-    config.prototyping = config.protoval_split is not None
+    # Set protoval_split_id from prototyping, and turn prototyping into a bool
+    config.prototyping = config.protoval_split_id is not None
     return run(config)
 
 
