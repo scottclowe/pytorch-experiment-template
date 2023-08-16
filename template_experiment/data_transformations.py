@@ -259,8 +259,7 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
         )
 
     elif transform_type == "trivialaugment-imagenet":
-        # Augmentation policy learnt by RandAugment, described in
-        # https://arxiv.org/abs/2103.10158
+        # Trivial augmentation policy, described in https://arxiv.org/abs/2103.10158
         train_transform = transforms.Compose(
             [
                 transforms.TrivialAugmentWide(
@@ -287,8 +286,7 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
         )
 
     elif transform_type == "trivialaugment-cifar":
-        # Trivial augmentation policy, described in
-        # https://arxiv.org/abs/2103.10158
+        # Trivial augmentation policy, described in https://arxiv.org/abs/2103.10158
         train_transform = transforms.Compose(
             [
                 transforms.TrivialAugmentWide(
