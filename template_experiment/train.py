@@ -602,8 +602,12 @@ def run_one_worker(gpu, ngpus_per_node, config):
         print(f"Training epoch {epoch}/{config.epochs} summary:")
         print(f"  Steps ..............{len(dataloader_train):8d}")
         print(f"  Samples ............{n_epoch_samples:8d}")
-        if timing_stats["train"] > 1800:
+        if timing_stats["train"] > 172800:
+            print(f"  Duration ...........{timing_stats['train']/86400:11.2f} days")
+        elif timing_stats["train"] > 5400:
             print(f"  Duration ...........{timing_stats['train']/3600:11.2f} hours")
+        elif timing_stats["train"] > 120:
+            print(f"  Duration ...........{timing_stats['train']/60:11.2f} minutes")
         else:
             print(f"  Duration ...........{timing_stats['train']:11.2f} seconds")
         print(f"  Throughput .........{train_stats['throughput']:11.2f} samples/sec")
