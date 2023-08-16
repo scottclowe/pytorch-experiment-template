@@ -101,18 +101,15 @@ def image_dataset_sizes(dataset):
     return num_classes, img_size, num_channels
 
 
-def fetch_dataset(
+def fetch_image_dataset(
     dataset,
     root=None,
-    prototyping=False,
     transform_train=None,
     transform_eval=None,
-    protoval_split_rate=0.1,
-    protoval_split_id=0,
     download=False,
 ):
     """
-    Fetch a train and test dataset object for a given dataset name.
+    Fetch a train and test dataset object for a given image dataset name.
 
     Parameters
     ----------
@@ -120,35 +117,16 @@ def fetch_dataset(
         Name of dataset.
     root : str, optional
         Path to root directory containing the dataset.
-    prototyping : bool, default=False
-        Whether to return a validation split distinct from the test split.
-        If ``False``, the validation split will be the same as the test split
-        for datasets which don't intrincally have a separate val and test
-        partition.
-        If ``True``, the validation partition is carved out of the train
-        partition (resulting in a smaller training set) when there is no
-        distinct validation partition available.
     transform_train : callable, optional
         A function/transform that takes in an PIL image and returns a
         transformed version, to be applied to the training dataset.
     transform_eval : callable, optional
         A function/transform that takes in an PIL image and returns a
         transformed version, to be applied to the evaluation dataset.
-    protoval_split_rate : float, default=0.1
-        The fraction of the train data to use for validating when in
-        prototyping mode.
-    protoval_split_id : int, default=0
-        The identity of the random split used for the train/val partitioning.
-        This controls the seed of the folds used for the split, and which
-        fold to use for the validation set.
-        The seed is equal to ``int(protoval_split_id * protoval_split_rate)``
-        and the fold is equal to ``protoval_split_id % (1 / protoval_split_rate)``.
     download : bool, optional
         Whether to download the dataset to the expected directory if it is not
         there. Only supported by some datasets. Default is ``False``.
     """
-    num_classes, img_size, num_channels = image_dataset_sizes(dataset)
-
     dataset = dataset.lower().replace("-", "").replace("_", "").replace(" ", "")
     host = determine_host()
 
@@ -304,6 +282,65 @@ def fetch_dataset(
     else:
         raise ValueError("Unrecognised dataset: {}".format(dataset))
 
+    return dataset_train, dataset_val, dataset_test
+
+
+def fetch_dataset(
+    dataset,
+    root=None,
+    prototyping=False,
+    transform_train=None,
+    transform_eval=None,
+    protoval_split_rate=0.1,
+    protoval_split_id=0,
+    download=False,
+):
+    """
+    Fetch a train and test dataset object for a given dataset name.
+
+    Parameters
+    ----------
+    dataset : str
+        Name of dataset.
+    root : str, optional
+        Path to root directory containing the dataset.
+    prototyping : bool, default=False
+        Whether to return a validation split distinct from the test split.
+        If ``False``, the validation split will be the same as the test split
+        for datasets which don't intrincally have a separate val and test
+        partition.
+        If ``True``, the validation partition is carved out of the train
+        partition (resulting in a smaller training set) when there is no
+        distinct validation partition available.
+    transform_train : callable, optional
+        A function/transform that takes in an PIL image and returns a
+        transformed version, to be applied to the training dataset.
+    transform_eval : callable, optional
+        A function/transform that takes in an PIL image and returns a
+        transformed version, to be applied to the evaluation dataset.
+    protoval_split_rate : float, default=0.1
+        The fraction of the train data to use for validating when in
+        prototyping mode.
+    protoval_split_id : int, default=0
+        The identity of the random split used for the train/val partitioning.
+        This controls the seed of the folds used for the split, and which
+        fold to use for the validation set.
+        The seed is equal to ``int(protoval_split_id * protoval_split_rate)``
+        and the fold is equal to ``protoval_split_id % (1 / protoval_split_rate)``.
+    download : bool, optional
+        Whether to download the dataset to the expected directory if it is not
+        there. Only supported by some datasets. Default is ``False``.
+    """
+    num_classes, img_size, num_channels = image_dataset_sizes(dataset)
+
+    dataset_train, dataset_val, dataset_test = fetch_image_dataset(
+        dataset=dataset,
+        root=root,
+        transform_train=transform_train,
+        transform_eval=transform_eval,
+        download=download,
+    )
+
     # Handle the validation partition
     if dataset_val is not None:
         distinct_val_test = True
@@ -311,7 +348,10 @@ def fetch_dataset(
         dataset_val = dataset_test
         distinct_val_test = False
     else:
-        # We need a copy of dataset_train with the evaluation transform instead.
+        # Create our own train/val split.
+        #
+        # For the validation part, we need a copy of dataset_train with the
+        # evaluation transform instead.
         # The transform argument is *probably* going to be set to an attribute
         # on the dataset object called transform and called from there. But we
         # can't be completely sure, so to be completely agnostic about the
@@ -324,52 +364,13 @@ def fetch_dataset(
         )[0]
         # dataset_val is a copy of the full training set, but with the transform
         # changed to transform_eval
-        # Now we need to reduce it down to just a subset of the training set.
-        # Let's use K-folds so subsequent prototype split IDs will have
-        # non-overlapping validation sets. With protoval_split_rate = 0.1,
-        # there will be 10 folds.
-        n_splits = round(1.0 / protoval_split_rate)
-        if (1.0 / n_splits) != protoval_split_rate:
-            warnings.warn(
-                "The requested train/val split rate is not possible when using"
-                " dataset into K folds. The actual split rate will be"
-                f" {1.0 / n_splits} instead of {protoval_split_rate}.",
-                UserWarning,
-                stacklevel=2,
-            )
-        protoval_split_seed = int(protoval_split_id * protoval_split_rate)
-        fold_id = protoval_split_id % n_splits
-        print(
-            f"Creating prototyping train/val split #{protoval_split_id}."
-            f" Using fold {fold_id} of {n_splits} folds, generated with seed"
-            f" {protoval_split_seed}."
+        # Create the train/val split using these dataset objects.
+        dataset_train, dataset_val = create_train_val_split(
+            dataset_train,
+            dataset_val,
+            protoval_split_rate=protoval_split_rate,
+            protoval_split_id=protoval_split_id,
         )
-        # Try to do a stratified split.
-        classes = get_dataset_labels(dataset_train)
-        if classes is None:
-            warnings.warn(
-                "Creating prototyping splits without stratification.",
-                UserWarning,
-                stacklevel=2,
-            )
-            splitter_ftry = sklearn.model_selection.KFold
-        else:
-            splitter_ftry = sklearn.model_selection.StratifiedKFold
-
-        # Create our splits. Assuming the dataset objects are always loaded
-        # the same way, since a given split ID will always be the same
-        # fold from the same seeded KFold splitter, it will yield the same
-        # train/val split on each run.
-        splitter = splitter_ftry(
-            n_splits=n_splits, shuffle=True, random_state=protoval_split_seed
-        )
-        splits = splitter.split(np.arange(len(dataset_train)), classes)
-        # splits is an iterable and we want to take the n-th fold from it.
-        for i, (train_indices, val_indices) in enumerate(splits):  # noqa: B007
-            if i == fold_id:
-                break
-        dataset_train = torch.utils.data.Subset(dataset_train, train_indices)
-        dataset_val = torch.utils.data.Subset(dataset_val, val_indices)
         distinct_val_test = True
 
     return (
@@ -381,6 +382,85 @@ def fetch_dataset(
         num_channels,
         distinct_val_test,
     )
+
+
+def create_train_val_split(
+    dataset_train,
+    dataset_val=None,
+    protoval_split_rate=0.1,
+    protoval_split_id=0,
+):
+    """
+    Create a train/val split of a dataset.
+
+    Parameters
+    ----------
+    dataset_train : torch.utils.data.Dataset
+        The full training dataset with training transforms.
+    dataset_val : torch.utils.data.Dataset, optional
+        The full training dataset with evaluation transforms.
+        If this is not given, the source for the validation set will be
+        ``dataset_test`` (with the same transforms as the training partition).
+        Note that ``dataset_val`` must have the same samples as
+        ``dataset_train``, and the samples must be in the same order.
+    protoval_split_rate : float, default=0.1
+        The fraction of the train data to use for the validation split.
+    protoval_split_id : int, default=0
+        The identity of the split to use.
+        This controls the seed of the folds used for the split, and which
+        fold to use for the validation set.
+        The seed is equal to ``int(protoval_split_id * protoval_split_rate)``
+        and the fold is equal to ``protoval_split_id % (1 / protoval_split_rate)``.
+    """
+    if dataset_val is None:
+        dataset_val = dataset_train
+    # Now we need to reduce it down to just a subset of the training set.
+    # Let's use K-folds so subsequent prototype split IDs will have
+    # non-overlapping validation sets. With protoval_split_rate = 0.1,
+    # there will be 10 folds.
+    n_splits = round(1.0 / protoval_split_rate)
+    if (1.0 / n_splits) != protoval_split_rate:
+        warnings.warn(
+            "The requested train/val split rate is not possible when using"
+            " dataset into K folds. The actual split rate will be"
+            f" {1.0 / n_splits} instead of {protoval_split_rate}.",
+            UserWarning,
+            stacklevel=2,
+        )
+    protoval_split_seed = int(protoval_split_id * protoval_split_rate)
+    fold_id = protoval_split_id % n_splits
+    print(
+        f"Creating prototyping train/val split #{protoval_split_id}."
+        f" Using fold {fold_id} of {n_splits} folds, generated with seed"
+        f" {protoval_split_seed}."
+    )
+    # Try to do a stratified split.
+    classes = get_dataset_labels(dataset_train)
+    if classes is None:
+        warnings.warn(
+            "Creating prototyping splits without stratification.",
+            UserWarning,
+            stacklevel=2,
+        )
+        splitter_ftry = sklearn.model_selection.KFold
+    else:
+        splitter_ftry = sklearn.model_selection.StratifiedKFold
+
+    # Create our splits. Assuming the dataset objects are always loaded
+    # the same way, since a given split ID will always be the same
+    # fold from the same seeded KFold splitter, it will yield the same
+    # train/val split on each run.
+    splitter = splitter_ftry(
+        n_splits=n_splits, shuffle=True, random_state=protoval_split_seed
+    )
+    splits = splitter.split(np.arange(len(dataset_train)), classes)
+    # splits is an iterable and we want to take the n-th fold from it.
+    for i, (train_indices, val_indices) in enumerate(splits):  # noqa: B007
+        if i == fold_id:
+            break
+    dataset_train = torch.utils.data.Subset(dataset_train, train_indices)
+    dataset_val = torch.utils.data.Subset(dataset_val, val_indices)
+    return dataset_train, dataset_val
 
 
 def get_dataset_labels(dataset):
