@@ -331,6 +331,12 @@ def run_one_worker(gpu, ngpus_per_node, config):
     )
 
     # Create the train and eval datasets, and get number of classes
+    dataset_args = {
+        "dataset": config.dataset_name,
+        "root": config.data_dir,
+        "prototyping": config.prototyping,
+        "download": config.allow_download_dataset,
+    }
     (
         dataset_train,
         dataset_val,
@@ -340,12 +346,9 @@ def run_one_worker(gpu, ngpus_per_node, config):
         img_channels,
         distinct_val_test,
     ) = datasets.fetch_dataset(
-        config.dataset_name,
-        config.data_dir,
-        prototyping=config.prototyping,
+        **dataset_args,
         transform_train=train_transform,
         transform_eval=eval_transform,
-        download=config.allow_download_dataset,
     )
 
     if config.distributed:
@@ -739,12 +742,9 @@ def run_one_worker(gpu, ngpus_per_node, config):
         " (no augmentation, dropout, etc)..."
     )
     dataset_train_eval = datasets.fetch_dataset(
-        config.dataset_name,
-        config.data_dir,
-        prototyping=config.prototyping,
+        **dataset_args,
         transform_train=eval_transform,
         transform_eval=eval_transform,
-        download=config.allow_download_dataset,
     )[0]
     dataloader_train_eval = torch.utils.data.DataLoader(
         dataset_train_eval, **test_kwargs
