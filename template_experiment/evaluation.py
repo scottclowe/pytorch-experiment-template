@@ -67,11 +67,11 @@ def evaluate(
         y_true_all.append(y_true.cpu().numpy())
         y_pred_all.append(y_pred.cpu().numpy())
         positives += torch.sum(y_pred == y_true).item()
-        total_xent += xent
+        total_xent += xent.item()
         total += y_true.shape[0]
 
     # Take the mean of the cross-entropy
-    xent = xent / total
+    xent = total_xent / total
     # Concatenate the targets and predictions from each batch
     y_true = np.concatenate(y_true_all)
     y_pred = np.concatenate(y_pred_all)
