@@ -337,6 +337,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
         "prototyping": config.prototyping,
         "download": config.allow_download_dataset,
     }
+    if config.protoval_split is not None:
+        dataset_args["protoval_split"] = config.protoval_split
     (
         dataset_train,
         dataset_val,
@@ -1042,7 +1044,10 @@ def get_parser():
     )
     group.add_argument(
         "--prototyping",
-        action="store_true",
+        dest="protoval_split",
+        nargs="?",
+        const=0,
+        type=int,
         help=(
             "Use a subset of the train partition for both train and val."
             " If the dataset doesn't have a separate val and test set with"
@@ -1353,6 +1358,7 @@ def cli():
     if config.disable_wandb:
         config.log_wandb = False
     del config.disable_wandb
+    config.prototyping = config.protoval_split is not None
     return run(config)
 
 
