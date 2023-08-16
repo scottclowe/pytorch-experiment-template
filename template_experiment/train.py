@@ -1049,10 +1049,10 @@ def get_parser():
             " public labels (which is the case for most datasets), the train"
             " partition will be reduced in size to create the val partition."
             " In all cases where --prototyping is enabled, the test set is"
-            " never used. Generally, you should use --prototyping throughout"
-            " the model exploration and hyperparameter optimization phases,"
-            " and disable it for your final experiments so they can run on a"
-            " completely held-out test set."
+            " never used during training. Generally, you should use"
+            " --prototyping throughout the model exploration and hyperparameter"
+            " optimization phases, and disable it for your final experiments so"
+            " they can run on a completely held-out test set."
         ),
     )
     group.add_argument(
