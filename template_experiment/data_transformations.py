@@ -21,21 +21,23 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
         std = args["std"]
 
     if transform_type == "noaug":
-        # If the training image is rectangular, there is a small "augmentation"
-        # as we will randomly crop a square (of length equal to the shortest
-        # side) from it to use as the input.
+        # No augmentations, just resize and normalize.
+        # N.B. If the raw training image isn't square, there is a small
+        # "augmentation" as we will randomly crop a square (of length equal to
+        # the shortest side) from it. We do this because we assume inputs to
+        # the network must be square.
         train_transform = transforms.Compose(
             [
-                transforms.Resize(image_size),
-                transforms.RandomCrop(image_size),
+                transforms.Resize(image_size),  # Resize shortest side to image_size
+                transforms.RandomCrop(image_size),  # If it is not square, *random* crop
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
         )
         test_transform = transforms.Compose(
             [
-                transforms.Resize(image_size),
-                transforms.CenterCrop(image_size),
+                transforms.Resize(image_size),  # Resize shortest side to image_size
+                transforms.CenterCrop(image_size),  # If it is not square, center crop
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -76,7 +78,7 @@ def get_transform(transform_type="barebones", image_size=32, args=None):
         )
 
     elif transform_type == "cifar":
-        # Appropriate for smaller images, as in CIFAR-10/100.
+        # Appropriate for smaller natural images, as in CIFAR-10/100.
         # For training:
         # - Zoom in randomly with scale (small range of how much to zoom in by)
         # - Stretch with random aspect ratio
