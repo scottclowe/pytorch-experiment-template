@@ -1014,7 +1014,6 @@ def get_parser():
         CLI argument parser.
     """
     import argparse
-    import os
     import sys
 
     # Use the name of the file called to determine the name of the program
