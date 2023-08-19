@@ -190,7 +190,7 @@ def fetch_image_dataset(
         dataset_val = None
         dataset_test = torchvision.datasets.ImageFolder(
             os.path.join(root, "imagenet", "val"),
-            transform=transform_train,
+            transform=transform_eval,
         )
 
     elif dataset == "imagenette":
@@ -207,7 +207,7 @@ def fetch_image_dataset(
         dataset_val = None
         dataset_test = torchvision.datasets.ImageFolder(
             os.path.join(root, "val"),
-            transform=transform_train,
+            transform=transform_eval,
         )
 
     elif dataset == "imagewoof":
@@ -224,7 +224,7 @@ def fetch_image_dataset(
         dataset_val = None
         dataset_test = torchvision.datasets.ImageFolder(
             os.path.join(root, "val"),
-            transform=transform_train,
+            transform=transform_eval,
         )
 
     elif dataset == "mnist":
