@@ -91,9 +91,9 @@ When creating a new repository from this template, these are the steps to follow
     This can be done with the sed command::
 
         sed -i "s/template_experiment/$PROJECT_DIRN/" \
-            "$PROJECT_DIRN"/*.py setup.py
+            "$PROJECT_DIRN"/*.py setup.py slurm/*.slrm
         sed -i "s/template-experiment/$PROJECT_HYPH/" \
-            "$PROJECT_DIRN"/*.py slurm/*.slrm
+            "$PROJECT_DIRN"/*.py setup.py slurm/*.slrm
 
     Which will make changes in the following places.
 
