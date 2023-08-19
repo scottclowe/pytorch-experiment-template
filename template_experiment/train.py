@@ -343,9 +343,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
         dataset_train,
         dataset_val,
         dataset_test,
-        n_class,
-        raw_img_size,
-        img_channels,
         distinct_val_test,
     ) = datasets.fetch_dataset(
         **dataset_args,

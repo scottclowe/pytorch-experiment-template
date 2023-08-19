@@ -331,8 +331,6 @@ def fetch_dataset(
         Whether to download the dataset to the expected directory if it is not
         there. Only supported by some datasets. Default is ``False``.
     """
-    num_classes, img_size, num_channels = image_dataset_sizes(dataset)
-
     dataset_train, dataset_val, dataset_test = fetch_image_dataset(
         dataset=dataset,
         root=root,
@@ -377,9 +375,6 @@ def fetch_dataset(
         dataset_train,
         dataset_val,
         dataset_test,
-        num_classes,
-        img_size,
-        num_channels,
         distinct_val_test,
     )
 
