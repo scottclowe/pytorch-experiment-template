@@ -175,11 +175,11 @@ def run_one_worker(gpu, ngpus_per_node, config):
             if getattr(checkpoint["config"], key, None) is None:
                 continue
             if getattr(config, key) is None:
-                setattr(config, key, getattr(checkpoint["config"], key, None))
                 print(
                     f"  Restoring config value for {key} from checkpoint:",
-                    getattr(config, key),
+                    getattr(checkpoint["config"], key),
                 )
+                setattr(config, key, getattr(checkpoint["config"], key, None))
             else:
                 print(
                     f"  Warning: config value for {key} differs from checkpoint:"
