@@ -130,7 +130,7 @@ def determine_epoch_seed(seed, epoch):
 
 
 def generate_id(length: int = 8) -> str:
-    """
+    r"""
     Generate a random base-36 string of `length` digits.
 
     Parameters

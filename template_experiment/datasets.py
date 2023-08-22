@@ -13,7 +13,7 @@ import torchvision.datasets
 
 
 def determine_host():
-    """
+    r"""
     Determine which compute server we are on.
 
     Returns
@@ -39,7 +39,7 @@ def determine_host():
 
 
 def image_dataset_sizes(dataset):
-    """
+    r"""
     Get the image size and number of classes for a dataset.
 
     Parameters
@@ -108,7 +108,7 @@ def fetch_image_dataset(
     transform_eval=None,
     download=False,
 ):
-    """
+    r"""
     Fetch a train and test dataset object for a given image dataset name.
 
     Parameters
@@ -295,7 +295,7 @@ def fetch_dataset(
     protoval_split_id=0,
     download=False,
 ):
-    """
+    r"""
     Fetch a train and test dataset object for a given dataset name.
 
     Parameters
@@ -385,7 +385,7 @@ def create_train_val_split(
     protoval_split_rate=0.1,
     protoval_split_id=0,
 ):
-    """
+    r"""
     Create a train/val split of a dataset.
 
     Parameters
@@ -459,7 +459,7 @@ def create_train_val_split(
 
 
 def get_dataset_labels(dataset):
-    """
+    r"""
     Get the class labels within a :class:`torch.utils.data.Dataset` object.
 
     Parameters

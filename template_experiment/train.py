@@ -20,7 +20,7 @@ BASE_BATCH_SIZE = 128
 
 
 def run(config):
-    """
+    r"""
     Begin running the experiment.
 
     Parameters
@@ -53,7 +53,7 @@ def run(config):
 
 
 def run_one_worker(gpu, ngpus_per_node, config):
-    """
+    r"""
     Run one worker in the distributed training process.
 
     Parameters
@@ -781,7 +781,7 @@ def train_one_epoch(
     total_step=0,
     n_samples_seen=0,
 ):
-    """
+    r"""
     Train the encoder and classifier for one epoch.
 
     Parameters
@@ -1006,7 +1006,7 @@ def train_one_epoch(
 
 
 def get_parser():
-    """
+    r"""
     Build argument parser for the command line interface.
 
     Returns
@@ -1359,7 +1359,7 @@ def get_parser():
 
 
 def cli():
-    """Command-line interface for model training."""
+    r"""Command-line interface for model training."""
     parser = get_parser()
     config = parser.parse_args()
     # Handle disable_wandb overriding log_wandb and forcing it to be disabled.

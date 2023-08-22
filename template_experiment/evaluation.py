@@ -18,7 +18,7 @@ def evaluate(
     verbosity=1,
     is_distributed=False,
 ):
-    """
+    r"""
     Evaluate model performance on a dataset.
 
     Parameters

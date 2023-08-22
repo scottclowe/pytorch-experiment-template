@@ -6,7 +6,7 @@ from timm.data import resolve_data_config
 
 
 def get_timm_encoder(model_name, pretrained=False, in_chans=3):
-    """
+    r"""
     Get the encoder model and its configuration from timm.
 
     Parameters
