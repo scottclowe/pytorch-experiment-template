@@ -889,6 +889,7 @@ def train_one_epoch(
         if config.distributed:
             # Fetch results from other GPUs
             loss_batch = torch.mean(utils.concat_all_gather(loss.reshape((1,))))
+            loss_batch = loss_batch.item()
         else:
             loss_batch = loss.item()
         loss_epoch += loss_batch
