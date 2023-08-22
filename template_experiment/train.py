@@ -297,7 +297,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     # DATASET =================================================================
     # Fetch dataset
-    train_kwargs = {
+    dl_train_kwargs = {
         "batch_size": config.batch_size_per_gpu,
         "drop_last": True,
         "shuffle": True,
@@ -305,7 +305,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     }
     if config.test_batch_size_per_gpu is None:
         config.test_batch_size_per_gpu = config.batch_size_per_gpu
-    test_kwargs = {
+    dl_test_kwargs = {
         "batch_size": config.test_batch_size_per_gpu,
         "drop_last": False,
         "shuffle": False,
@@ -313,8 +313,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
     }
     if use_cuda:
         cuda_kwargs = {"num_workers": config.workers, "pin_memory": True}
-        train_kwargs.update(cuda_kwargs)
-        test_kwargs.update(cuda_kwargs)
+        dl_train_kwargs.update(cuda_kwargs)
+        dl_test_kwargs.update(cuda_kwargs)
 
     # Get transforms
     transform_args = {}
@@ -353,18 +353,18 @@ def run_one_worker(gpu, ngpus_per_node, config):
     if config.distributed:
         # The DistributedSampler breaks up the dataset across the GPUs
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
-        train_kwargs["sampler"] = train_sampler
-        train_kwargs["shuffle"] = None
-        test_kwargs["sampler"] = torch.utils.data.distributed.DistributedSampler(
+        dl_train_kwargs["sampler"] = train_sampler
+        dl_train_kwargs["shuffle"] = None
+        dl_test_kwargs["sampler"] = torch.utils.data.distributed.DistributedSampler(
             dataset_test
         )
-        test_kwargs["shuffle"] = None
+        dl_test_kwargs["shuffle"] = None
     else:
         train_sampler = None
 
-    dataloader_train = torch.utils.data.DataLoader(dataset_train, **train_kwargs)
-    dataloader_val = torch.utils.data.DataLoader(dataset_val, **test_kwargs)
-    dataloader_test = torch.utils.data.DataLoader(dataset_test, **test_kwargs)
+    dataloader_train = torch.utils.data.DataLoader(dataset_train, **dl_train_kwargs)
+    dataloader_val = torch.utils.data.DataLoader(dataset_val, **dl_test_kwargs)
+    dataloader_test = torch.utils.data.DataLoader(dataset_test, **dl_test_kwargs)
 
     # OPTIMIZATION ============================================================
     # Optimizer ---------------------------------------------------------------
@@ -751,7 +751,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         transform_eval=eval_transform,
     )[0]
     dataloader_train_eval = torch.utils.data.DataLoader(
-        dataset_train_eval, **test_kwargs
+        dataset_train_eval, **dl_test_kwargs
     )
     eval_stats = evaluate(
         dataloader=dataloader_train_eval,
