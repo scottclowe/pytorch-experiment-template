@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import builtins
+import copy
 import os
 import shutil
 import time
@@ -300,6 +301,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     dl_train_kwargs = {
         "batch_size": config.batch_size_per_gpu,
         "drop_last": True,
+        "sampler": None,
         "shuffle": True,
         "worker_init_fn": utils.worker_seed_fn,
     }
@@ -308,6 +310,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     dl_test_kwargs = {
         "batch_size": config.test_batch_size_per_gpu,
         "drop_last": False,
+        "sampler": None,
         "shuffle": False,
         "worker_init_fn": utils.worker_seed_fn,
     }
@@ -315,6 +318,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
         cuda_kwargs = {"num_workers": config.workers, "pin_memory": True}
         dl_train_kwargs.update(cuda_kwargs)
         dl_test_kwargs.update(cuda_kwargs)
+
+    dl_val_kwargs = copy.deepcopy(dl_test_kwargs)
 
     # Get transforms
     transform_args = {}
@@ -352,18 +357,21 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     if config.distributed:
         # The DistributedSampler breaks up the dataset across the GPUs
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset_train)
-        dl_train_kwargs["sampler"] = train_sampler
+        dl_train_kwargs["sampler"] = torch.utils.data.distributed.DistributedSampler(
+            dataset_train
+        )
         dl_train_kwargs["shuffle"] = None
+        dl_val_kwargs["sampler"] = torch.utils.data.distributed.DistributedSampler(
+            dataset_val
+        )
+        dl_val_kwargs["shuffle"] = None
         dl_test_kwargs["sampler"] = torch.utils.data.distributed.DistributedSampler(
             dataset_test
         )
         dl_test_kwargs["shuffle"] = None
-    else:
-        train_sampler = None
 
     dataloader_train = torch.utils.data.DataLoader(dataset_train, **dl_train_kwargs)
-    dataloader_val = torch.utils.data.DataLoader(dataset_val, **dl_test_kwargs)
+    dataloader_val = torch.utils.data.DataLoader(dataset_val, **dl_val_kwargs)
     dataloader_test = torch.utils.data.DataLoader(dataset_test, **dl_test_kwargs)
 
     # OPTIMIZATION ============================================================
@@ -566,10 +574,10 @@ def run_one_worker(gpu, ngpus_per_node, config):
             # number of CPU workers for the dataloader).
             utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
 
-        if config.distributed and train_sampler is not None:
+        if config.distributed and dl_train_kwargs["sampler"] is not None:
             # Set the epoch for the sampler so that it can shuffle the data
             # differently for each epoch, but synchronized across all GPUs.
-            train_sampler.set_epoch(epoch)
+            dl_train_kwargs["sampler"].set_epoch(epoch)
 
         # Train ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Note the number of samples seen before this epoch started, so we can
@@ -750,8 +758,15 @@ def run_one_worker(gpu, ngpus_per_node, config):
         transform_train=eval_transform,
         transform_eval=eval_transform,
     )[0]
+    dl_train_eval_kwargs = copy.deepcopy(dl_test_kwargs)
+    if config.distributed:
+        # The DistributedSampler breaks up the dataset across the GPUs
+        dl_train_eval_kwargs[
+            "sampler"
+        ] = torch.utils.data.distributed.DistributedSampler(dataset_train_eval)
+        dl_train_eval_kwargs["shuffle"] = None
     dataloader_train_eval = torch.utils.data.DataLoader(
-        dataset_train_eval, **dl_test_kwargs
+        dataset_train_eval, **dl_train_eval_kwargs
     )
     eval_stats = evaluate(
         dataloader=dataloader_train_eval,
