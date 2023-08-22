@@ -344,7 +344,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         config.transform_type, config.image_size, transform_args
     )
 
-    # Create the train and eval datasets, and get number of classes
+    # Create the train and eval datasets
     dataset_args = {
         "dataset": config.dataset_name,
         "root": config.data_dir,
