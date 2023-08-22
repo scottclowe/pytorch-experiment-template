@@ -330,6 +330,18 @@ def fetch_dataset(
     download : bool, optional
         Whether to download the dataset to the expected directory if it is not
         there. Only supported by some datasets. Default is ``False``.
+
+    Returns
+    -------
+    dataset_train : torch.utils.data.Dataset
+        The training dataset.
+    dataset_val : torch.utils.data.Dataset
+        The validation dataset.
+    dataset_test : torch.utils.data.Dataset
+        The test dataset.
+    distinct_val_test : bool
+        Whether the validation and test partitions are distinct (True) or
+        identical (False).
     """
     dataset_train, dataset_val, dataset_test = fetch_image_dataset(
         dataset=dataset,
@@ -406,6 +418,13 @@ def create_train_val_split(
         fold to use for the validation set.
         The seed is equal to ``int(protoval_split_id * protoval_split_rate)``
         and the fold is equal to ``protoval_split_id % (1 / protoval_split_rate)``.
+
+    Returns
+    -------
+    dataset_train : torch.utils.data.Dataset
+        The training subset of the dataset.
+    dataset_val : torch.utils.data.Dataset
+        The validation subset of the dataset.
     """
     if dataset_val is None:
         dataset_val = dataset_train

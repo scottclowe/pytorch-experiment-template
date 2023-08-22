@@ -61,7 +61,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     Parameters
     ----------
     gpu : int
-        The GPU index of this worker.
+        The GPU index of this worker, relative to this node.
     ngpus_per_node : int
         The number of GPUs per node.
     config : argparse.Namespace or OmegaConf
