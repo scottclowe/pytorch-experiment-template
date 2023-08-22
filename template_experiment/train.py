@@ -71,6 +71,14 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     if config.seed is not None:
         utils.set_rng_seeds_fixed(config.seed)
+    elif config.distributed and (
+        config.resume is None or not os.path.isfile(config.resume)
+    ):
+        raise ValueError(
+            "A seed must be specified for distributed training so that each"
+            " GPU-worker starts with the same initial weights."
+        )
+
     if config.deterministic:
         print("Running in deterministic cuDNN mode. Performance may be slower.")
         torch.backends.cudnn.deterministic = True
