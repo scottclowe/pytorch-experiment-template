@@ -369,6 +369,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         dl_train_kwargs["sampler"] = DistributedSampler(
             dataset_train,
             shuffle=True,
+            seed=config.seed if config.seed is not None else 0,
             drop_last=False,
         )
         dl_train_kwargs["shuffle"] = None
