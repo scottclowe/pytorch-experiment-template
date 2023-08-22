@@ -43,44 +43,45 @@ def evaluate(
     """
     model.eval()
 
-    positives = 0
-    total_xent = 0
-    total = 0
-
     y_true_all = []
     y_pred_all = []
+    xent_all = []
 
     for stimuli, y_true in dataloader:
         stimuli = stimuli.to(device)
         y_true = y_true.to(device)
         with torch.no_grad():
             logits = model(stimuli)
-            xent = F.cross_entropy(logits, y_true, reduction="sum")
+            xent = F.cross_entropy(logits, y_true, reduction="none")
             y_pred = torch.argmax(logits, dim=-1)
 
         if is_distributed:
             # Fetch results from other GPUs
-            xent = torch.sum(utils.concat_all_gather(xent.reshape((1,))))
+            xent = utils.concat_all_gather_ragged(xent)
             y_true = utils.concat_all_gather_ragged(y_true)
             y_pred = utils.concat_all_gather_ragged(y_pred)
 
+        xent_all.append(xent.cpu().numpy())
         y_true_all.append(y_true.cpu().numpy())
         y_pred_all.append(y_pred.cpu().numpy())
-        positives += torch.sum(y_pred == y_true).item()
-        total_xent += xent.item()
-        total += y_true.shape[0]
 
-    # Take the mean of the cross-entropy
-    xent = total_xent / total
     # Concatenate the targets and predictions from each batch
+    xent = np.concatenate(xent_all)
     y_true = np.concatenate(y_true_all)
     y_pred = np.concatenate(y_pred_all)
+    # If the dataset size was not evenly divisible by the world size,
+    # DistributedSampler will pad the end of the list of samples
+    # with some repetitions. We need to trim these off.
+    n_samples = len(dataloader.dataset)
+    xent = xent[:n_samples]
+    y_true = y_true[:n_samples]
+    y_pred = y_pred[:n_samples]
     # Create results dictionary
     results = {}
-    results["count"] = total
-    results["cross-entropy"] = xent
+    results["count"] = len(y_true)
+    results["cross-entropy"] = np.mean(xent)
     # Note that these evaluation metrics have all been converted to percentages
-    results["accuracy"] = 100.0 * positives / total
+    results["accuracy"] = 100.0 * sklearn.metrics.accuracy_score(y_true, y_pred)
     results["accuracy-balanced"] = 100.0 * sklearn.metrics.balanced_accuracy_score(
         y_true, y_pred
     )

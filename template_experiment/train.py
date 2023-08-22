@@ -366,11 +366,23 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     if config.distributed:
         # The DistributedSampler breaks up the dataset across the GPUs
-        dl_train_kwargs["sampler"] = DistributedSampler(dataset_train)
+        dl_train_kwargs["sampler"] = DistributedSampler(
+            dataset_train,
+            shuffle=True,
+            drop_last=False,
+        )
         dl_train_kwargs["shuffle"] = None
-        dl_val_kwargs["sampler"] = DistributedSampler(dataset_val)
+        dl_val_kwargs["sampler"] = DistributedSampler(
+            dataset_val,
+            shuffle=False,
+            drop_last=False,
+        )
         dl_val_kwargs["shuffle"] = None
-        dl_test_kwargs["sampler"] = DistributedSampler(dataset_test)
+        dl_test_kwargs["sampler"] = DistributedSampler(
+            dataset_test,
+            shuffle=False,
+            drop_last=False,
+        )
         dl_test_kwargs["shuffle"] = None
 
     dataloader_train = torch.utils.data.DataLoader(dataset_train, **dl_train_kwargs)
@@ -764,7 +776,11 @@ def run_one_worker(gpu, ngpus_per_node, config):
     dl_train_eval_kwargs = copy.deepcopy(dl_test_kwargs)
     if config.distributed:
         # The DistributedSampler breaks up the dataset across the GPUs
-        dl_train_eval_kwargs["sampler"] = DistributedSampler(dataset_train_eval)
+        dl_train_eval_kwargs["sampler"] = DistributedSampler(
+            dataset_train_eval,
+            shuffle=False,
+            drop_last=False,
+        )
         dl_train_eval_kwargs["shuffle"] = None
     dataloader_train_eval = torch.utils.data.DataLoader(
         dataset_train_eval, **dl_train_eval_kwargs
