@@ -949,7 +949,7 @@ def train_one_epoch(
                 log_images = utils.concat_all_gather(log_images)
             if config.gpu_rank == 0:
                 wandb.log(
-                    {"Training/stepwise/images/stimuli": wandb.Image(log_images)},
+                    {"Training/stepwise/Train/stimuli": wandb.Image(log_images)},
                     step=total_step,
                 )
 
@@ -982,10 +982,10 @@ def train_one_epoch(
             log_dict = {
                 "Training/stepwise/epoch": epoch,
                 "Training/stepwise/epoch_progress": epoch_progress,
-                "Training/stepwise/throughput": throughput,
                 "Training/stepwise/n_samples_seen": n_samples_seen,
-                "Training/stepwise/train_loss": loss_batch,
-                "Training/stepwise/accuracy": acc,
+                "Training/stepwise/Train/throughput": throughput,
+                "Training/stepwise/Train/loss": loss_batch,
+                "Training/stepwise/Train/accuracy": acc,
             }
             # Track the learning rate of each parameter group
             for lr_idx in range(len(optimizer.param_groups)):
