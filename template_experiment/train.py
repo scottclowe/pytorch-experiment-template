@@ -71,9 +71,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     if config.seed is not None:
         utils.set_rng_seeds_fixed(config.seed)
-    elif config.distributed and (
-        config.resume is None or not os.path.isfile(config.resume)
-    ):
+    elif config.distributed and config.resume is None:
         raise ValueError(
             "A seed must be specified for distributed training so that each"
             " GPU-worker starts with the same initial weights."
@@ -463,31 +461,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
     # Set up loss function
     criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing)
 
-    # RESUME ==================================================================
-    # Now that everything is set up, we can load the state of the model,
-    # optimizer, and scheduler from a checkpoint, if supplied.
-
-    # Initialize step related variables as if we're starting from scratch.
-    # Their values will be overridden by the checkpoint if we're resuming.
-    total_step = 0
-    n_samples_seen = 0
-
-    best_stats = {"max_accuracy": 0, "best_epoch": 0}
-
-    if checkpoint is not None:
-        print(
-            f"Loading state from checkpoint '{config.resume}' (epoch {checkpoint['epoch']})"
-        )
-        # Map model to be loaded to specified single gpu.
-        total_step = checkpoint["total_step"]
-        n_samples_seen = checkpoint["n_samples_seen"]
-        encoder.load_state_dict(checkpoint["encoder"])
-        classifier.load_state_dict(checkpoint["classifier"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        scheduler.load_state_dict(checkpoint["scheduler"])
-        best_stats["max_accuracy"] = checkpoint.get("max_accuracy", 0)
-        best_stats["best_epoch"] = checkpoint.get("best_epoch", 0)
-
     # LOGGING =================================================================
     # Setup logging and saving
 
@@ -556,6 +529,71 @@ def run_one_worker(gpu, ngpus_per_node, config):
         print(f"Model will be saved to '{ckpt_path_latest}'")
     else:
         ckpt_path_latest = None
+
+    # RESUME ==================================================================
+    # Now that everything is set up, we can load the state of the model,
+    # optimizer, and scheduler from a checkpoint, if supplied.
+
+    # Initialize step related variables as if we're starting from scratch.
+    # Their values will be overridden by the checkpoint if we're resuming.
+    total_step = 0
+    n_samples_seen = 0
+
+    best_stats = {"max_accuracy": 0, "best_epoch": 0}
+
+    if checkpoint is None and config.distributed:
+        # To synchronize the exact model weights between the GPUs, we need
+        # to save a checkpoint and then load it at the start of training.
+        # We can't rely on the RNG state being the same meaning that we get
+        # the same weights on each GPU, apparently.
+        #
+        # Since the job ID and name might not have been given at the command
+        # line, we need to commnicate between the workers to agree on a file
+        # name for the checkpoint.
+        ckpt_paths = [None for _ in range(config.world_size)]
+        torch.distributed.all_gather_object(ckpt_paths, ckpt_path_latest)
+        ckpt_path_latest = ckpt_paths[0]
+        if config.gpu_rank == 0:
+            print(f"\nSaving initial model to {ckpt_path_latest}")
+            tmp_a, tmp_b = os.path.split(ckpt_path_latest)
+            tmp_fname = os.path.join(tmp_a, ".tmp." + tmp_b)
+            torch.save(
+                {
+                    "encoder": encoder.state_dict(),
+                    "classifier": classifier.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(),
+                    "epoch": start_epoch - 1,
+                    "total_step": total_step,
+                    "n_samples_seen": n_samples_seen,
+                    "config": config,
+                    "encoder_config": encoder_config,
+                    "transform_args": transform_args,
+                    **best_stats,
+                },
+                tmp_fname,
+            )
+            os.rename(tmp_fname, ckpt_path_latest)
+            print(f"Saved model to {ckpt_path_latest}")
+
+        # Other GPUs have to wait for the main worker to finish saving the checkpoint
+        torch.distributed.barrier()
+        # Now we can load the checkpoint on all GPUs.
+        print(f"Loading initial checkpoint '{ckpt_path_latest}'")
+        # Map model parameters to be load to the specified gpu.
+        checkpoint = torch.load(config.resume, map_location=device)
+
+    if checkpoint is not None:
+        print(f"Loading state from checkpoint (epoch {checkpoint['epoch']})")
+        # Map model to be loaded to specified single gpu.
+        total_step = checkpoint["total_step"]
+        n_samples_seen = checkpoint["n_samples_seen"]
+        encoder.load_state_dict(checkpoint["encoder"])
+        classifier.load_state_dict(checkpoint["classifier"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler.load_state_dict(checkpoint["scheduler"])
+        best_stats["max_accuracy"] = checkpoint.get("max_accuracy", 0)
+        best_stats["best_epoch"] = checkpoint.get("best_epoch", 0)
 
     # TRAIN ===================================================================
     print()
