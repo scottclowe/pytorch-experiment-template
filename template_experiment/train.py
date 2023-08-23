@@ -188,7 +188,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
                     getattr(checkpoint["config"], key),
                 )
                 setattr(config, key, getattr(checkpoint["config"], key, None))
-            else:
+            elif getattr(config, key) != getattr(checkpoint["config"], key):
                 print(
                     f"  Warning: config value for {key} differs from checkpoint:"
                     f" {getattr(config, key)} (ours) vs"
