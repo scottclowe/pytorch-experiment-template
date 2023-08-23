@@ -195,6 +195,20 @@ def run_one_worker(gpu, ngpus_per_node, config):
                     f" {getattr(checkpoint['config'], key)} (checkpoint)"
                 )
 
+    if config.start_epoch is not None:
+        # A specified start_epoch will always override the resume epoch
+        start_epoch = config.start_epoch
+    elif checkpoint is not None:
+        # Continue from where we left off
+        start_epoch = checkpoint["epoch"] + 1
+        if config.seed is not None:
+            # Make sure we don't get the same behaviour as we did on the
+            # first epoch repeated on this resumed epoch.
+            utils.set_rng_seeds_fixed(config.seed + start_epoch, all_gpu=False)
+    else:
+        # Our epochs go from 1 to n_epoch, inclusive
+        start_epoch = 1
+
     # MODEL ===================================================================
 
     # Encoder -----------------------------------------------------------------
@@ -314,6 +328,11 @@ def run_one_worker(gpu, ngpus_per_node, config):
         "shuffle": True,
         "worker_init_fn": utils.worker_seed_fn,
     }
+    if config.seed is not None:
+        dl_train_kwargs["generator"] = torch.Generator()
+        dl_train_kwargs["generator"].manual_seed(
+            config.seed + start_epoch + 10000 * config.gpu_rank
+        )
     if config.test_batch_size_per_gpu is None:
         config.test_batch_size_per_gpu = config.batch_size_per_gpu
     dl_test_kwargs = {
@@ -450,7 +469,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     # Initialize step related variables as if we're starting from scratch.
     # Their values will be overridden by the checkpoint if we're resuming.
-    resume_epoch = None
     total_step = 0
     n_samples_seen = 0
 
@@ -461,7 +479,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
             f"Loading state from checkpoint '{config.resume}' (epoch {checkpoint['epoch']})"
         )
         # Map model to be loaded to specified single gpu.
-        resume_epoch = checkpoint["epoch"] + 1
         total_step = checkpoint["total_step"]
         n_samples_seen = checkpoint["n_samples_seen"]
         encoder.load_state_dict(checkpoint["encoder"])
@@ -470,16 +487,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
         scheduler.load_state_dict(checkpoint["scheduler"])
         best_stats["max_accuracy"] = checkpoint.get("max_accuracy", 0)
         best_stats["best_epoch"] = checkpoint.get("best_epoch", 0)
-
-    if config.start_epoch is not None:
-        # A specified start_epoch will always override the resume epoch
-        start_epoch = config.start_epoch
-    elif resume_epoch is not None:
-        # Continue from where we left off
-        start_epoch = resume_epoch
-    else:
-        # Our epochs go from 1 to n_epoch, inclusive
-        start_epoch = 1
 
     # LOGGING =================================================================
     # Setup logging and saving
@@ -589,11 +596,26 @@ def run_one_worker(gpu, ngpus_per_node, config):
             # reproducible if it is rerun with the same number of GPUs (and the same
             # number of CPU workers for the dataloader).
             utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
+            dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
 
-        if config.distributed and dl_train_kwargs["sampler"] is not None:
+        if hasattr(dataloader_train.sampler, "set_epoch"):
+            # Handling for DistributedSampler.
             # Set the epoch for the sampler so that it can shuffle the data
             # differently for each epoch, but synchronized across all GPUs.
-            dl_train_kwargs["sampler"].set_epoch(epoch)
+            dataloader_train.sampler.set_epoch(epoch)
+        if (
+            getattr(dataloader_train.sampler, "generator", None) is not None
+            and config.seed is not None
+        ):
+            # Handling for RandomSampler.
+            # The interface is less clean, but we manually set the seed for the
+            # dataloader so that it shuffles the data in a deterministic way,
+            # mirroring the sequence of shuffles used by DistributedSampler.
+            # N.B. This config should only run when there is only one GPU, so
+            # the ``k * config.gpu_rank`` bit is 0 in practice.
+            dataloader_train.sampler.generator.manual_seed(
+                config.seed + epoch + 10000 * config.gpu_rank
+            )
 
         # Train ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Note the number of samples seen before this epoch started, so we can
