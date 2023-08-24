@@ -626,7 +626,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
             # reproducible if it is rerun with the same number of GPUs (and the same
             # number of CPU workers for the dataloader).
             utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
-            dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
+            if getattr(dataloader_train, "generator", None) is not None:
+                dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
 
         if hasattr(dataloader_train.sampler, "set_epoch"):
             # Handling for DistributedSampler.
