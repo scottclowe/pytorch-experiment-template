@@ -352,11 +352,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
         "shuffle": True,
         "worker_init_fn": utils.worker_seed_fn,
     }
-    if config.seed is not None:
-        dl_train_kwargs["generator"] = torch.Generator()
-        dl_train_kwargs["generator"].manual_seed(
-            config.seed + start_epoch + 10000 * config.gpu_rank
-        )
     if config.test_batch_size_per_gpu is None:
         config.test_batch_size_per_gpu = config.batch_size_per_gpu
     dl_test_kwargs = {
