@@ -318,7 +318,41 @@ def run_one_worker(gpu, ngpus_per_node, config):
         classifier = classifier.to(device)
 
     # DATASET =================================================================
-    # Fetch dataset
+    # Create data transforms
+    transform_args = {}
+    if config.dataset_name in data_transformations.VALID_TRANSFORMS:
+        transform_args["normalization"] = config.dataset_name
+
+    if "mean" in encoder_config:
+        transform_args["mean"] = encoder_config["mean"]
+    if "std" in encoder_config:
+        transform_args["std"] = encoder_config["std"]
+
+    train_transform, eval_transform = data_transformations.get_transform(
+        config.transform_type, config.image_size, transform_args
+    )
+
+    # Fetch the train and eval datasets
+    dataset_args = {
+        "dataset": config.dataset_name,
+        "root": config.data_dir,
+        "prototyping": config.prototyping,
+        "download": config.allow_download_dataset,
+    }
+    if config.protoval_split_id is not None:
+        dataset_args["protoval_split_id"] = config.protoval_split_id
+    (
+        dataset_train,
+        dataset_val,
+        dataset_test,
+        distinct_val_test,
+    ) = datasets.fetch_dataset(
+        **dataset_args,
+        transform_train=train_transform,
+        transform_eval=eval_transform,
+    )
+
+    # Create dataloaders for the dataset
     dl_train_kwargs = {
         "batch_size": config.batch_size_per_gpu,
         "drop_last": True,
@@ -346,40 +380,6 @@ def run_one_worker(gpu, ngpus_per_node, config):
         dl_test_kwargs.update(cuda_kwargs)
 
     dl_val_kwargs = copy.deepcopy(dl_test_kwargs)
-
-    # Get transforms
-    transform_args = {}
-    if config.dataset_name in data_transformations.VALID_TRANSFORMS:
-        transform_args["normalization"] = config.dataset_name
-
-    if "mean" in encoder_config:
-        transform_args["mean"] = encoder_config["mean"]
-    if "std" in encoder_config:
-        transform_args["std"] = encoder_config["std"]
-
-    train_transform, eval_transform = data_transformations.get_transform(
-        config.transform_type, config.image_size, transform_args
-    )
-
-    # Create the train and eval datasets
-    dataset_args = {
-        "dataset": config.dataset_name,
-        "root": config.data_dir,
-        "prototyping": config.prototyping,
-        "download": config.allow_download_dataset,
-    }
-    if config.protoval_split_id is not None:
-        dataset_args["protoval_split_id"] = config.protoval_split_id
-    (
-        dataset_train,
-        dataset_val,
-        dataset_test,
-        distinct_val_test,
-    ) = datasets.fetch_dataset(
-        **dataset_args,
-        transform_train=train_transform,
-        transform_eval=eval_transform,
-    )
 
     if config.distributed:
         # The DistributedSampler breaks up the dataset across the GPUs
