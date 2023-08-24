@@ -640,8 +640,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         ):
             # Handling for RandomSampler.
             # The interface is less clean, but we manually set the seed for the
-            # dataloader so that it shuffles the data in a deterministic way,
-            # mirroring the sequence of shuffles used by DistributedSampler.
+            # dataloader so that it shuffles the data in a deterministic way.
             # N.B. This config should only run when there is only one GPU, so
             # the ``k * config.gpu_rank`` bit is 0 in practice.
             dataloader_train.sampler.generator.manual_seed(
