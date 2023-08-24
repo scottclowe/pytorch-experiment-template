@@ -30,14 +30,6 @@ def run(config):
     config : argparse.Namespace or OmegaConf
         The configuration for this experiment.
     """
-    if config.gpu is not None:
-        warnings.warn(
-            f"You have chosen a specific GPU ({config.gpu})."
-            " This will completely disable data parallelism.",
-            UserWarning,
-            stacklevel=2,
-        )
-
     ngpus_per_node = torch.cuda.device_count()
     config.world_size = ngpus_per_node * config.node_count
     config.distributed = config.world_size > 1
