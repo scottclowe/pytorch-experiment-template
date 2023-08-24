@@ -71,10 +71,10 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     if config.seed is not None:
         utils.set_rng_seeds_fixed(config.seed)
-    elif config.distributed and config.resume is None:
+    elif config.distributed and not config.model_output_dir and not config.models_dir:
         raise ValueError(
-            "A seed must be specified for distributed training so that each"
-            " GPU-worker starts with the same initial weights."
+            "A seed or checkpoint file must be specified for distributed training"
+            " so that each GPU-worker starts with the same initial weights."
         )
 
     if config.deterministic:
