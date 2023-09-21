@@ -310,7 +310,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         classifier = classifier.to(device)
 
     # DATASET =================================================================
-    # Create data transforms
+    # Transforms --------------------------------------------------------------
     transform_args = {}
     if config.dataset_name in data_transformations.VALID_TRANSFORMS:
         transform_args["normalization"] = config.dataset_name
@@ -324,7 +324,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         config.transform_type, config.image_size, transform_args
     )
 
-    # Fetch the train and eval datasets
+    # Dataset -----------------------------------------------------------------
     dataset_args = {
         "dataset": config.dataset_name,
         "root": config.data_dir,
@@ -344,7 +344,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         transform_eval=eval_transform,
     )
 
-    # Create dataloaders for the dataset
+    # Dataloader --------------------------------------------------------------
     dl_train_kwargs = {
         "batch_size": config.batch_size_per_gpu,
         "drop_last": True,
