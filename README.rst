@@ -431,11 +431,11 @@ the following steps.
 
 #. Inspect the output of the job with::
 
-        cat jnb_JOBID.log
+        cat jnb_JOBID.out
 
    e.g.::
 
-        cat jnb_10618891.log
+        cat jnb_10618891.out
 
    The output will contain the port number that the notebook server is using,
    and the token as follows:
