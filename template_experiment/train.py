@@ -320,7 +320,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
     if "std" in encoder_config:
         transform_args["std"] = encoder_config["std"]
 
-    train_transform, eval_transform = data_transformations.get_transform(
+    transform_train, transform_eval = data_transformations.get_transform(
         config.transform_type, config.image_size, transform_args
     )
 
@@ -340,8 +340,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
         distinct_val_test,
     ) = datasets.fetch_dataset(
         **dataset_args,
-        transform_train=train_transform,
-        transform_eval=eval_transform,
+        transform_train=transform_train,
+        transform_eval=transform_eval,
     )
 
     # Dataloader --------------------------------------------------------------
@@ -818,8 +818,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
     )
     dataset_train_eval = datasets.fetch_dataset(
         **dataset_args,
-        transform_train=eval_transform,
-        transform_eval=eval_transform,
+        transform_train=transform_eval,
+        transform_eval=transform_eval,
     )[0]
     dl_train_eval_kwargs = copy.deepcopy(dl_test_kwargs)
     if config.distributed:
