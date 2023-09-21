@@ -621,7 +621,11 @@ def run_one_worker(gpu, ngpus_per_node, config):
             # reproducible if it is rerun with the same number of GPUs (and the same
             # number of CPU workers for the dataloader).
             utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
-            if getattr(dataloader_train, "generator", None) is not None:
+            if isinstance(
+                getattr(dataloader_train, "generator", None), torch.Generator
+            ):
+                # Finesse the dataloader's RNG state, if it is not using the
+                # global state.
                 dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
             if isinstance(
                 getattr(dataloader_train.sampler, "generator", None), torch.Generator
