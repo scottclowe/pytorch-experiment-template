@@ -11,7 +11,7 @@ NORMALIZATION = {
 VALID_TRANSFORMS = ["imagenet", "cifar", "mnist"]
 
 
-def get_transform(transform_type="barebones", image_size=32, args=None):
+def get_transform(transform_type="noaug", image_size=32, args=None):
     if args is None:
         args = {}
     mean, std = NORMALIZATION[args.get("normalization", "imagenet")]
