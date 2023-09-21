@@ -623,24 +623,20 @@ def run_one_worker(gpu, ngpus_per_node, config):
             utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
             if getattr(dataloader_train, "generator", None) is not None:
                 dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
+            if isinstance(
+                getattr(dataloader_train.sampler, "generator", None), torch.Generator
+            ):
+                # Finesse the sampler's RNG state, if it is not using the
+                # global RNG state.
+                dataloader_train.sampler.generator.manual_seed(
+                    config.seed + epoch + 10000 * config.gpu_rank
+                )
 
         if hasattr(dataloader_train.sampler, "set_epoch"):
             # Handling for DistributedSampler.
             # Set the epoch for the sampler so that it can shuffle the data
             # differently for each epoch, but synchronized across all GPUs.
             dataloader_train.sampler.set_epoch(epoch)
-        if (
-            getattr(dataloader_train.sampler, "generator", None) is not None
-            and config.seed is not None
-        ):
-            # Handling for RandomSampler.
-            # The interface is less clean, but we manually set the seed for the
-            # dataloader so that it shuffles the data in a deterministic way.
-            # N.B. This config should only run when there is only one GPU, so
-            # the ``k * config.gpu_rank`` bit is 0 in practice.
-            dataloader_train.sampler.generator.manual_seed(
-                config.seed + epoch + 10000 * config.gpu_rank
-            )
 
         # Train ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Note the number of samples seen before this epoch started, so we can
