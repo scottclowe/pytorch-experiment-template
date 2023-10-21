@@ -21,56 +21,71 @@ LATEST_CKPT_NAME = "checkpoint_latest.pt"
 BASE_BATCH_SIZE = 128
 
 
+def check_is_distributed():
+    r"""
+    Check if the current job is running in distributed mode.
+
+    Returns
+    -------
+    bool
+        Whether the job is running in distributed mode.
+    """
+    return (
+        "WORLD_SIZE" in os.environ
+        and "RANK" in os.environ
+        and "LOCAL_RANK" in os.environ
+        and "MASTER_ADDR" in os.environ
+        and "MASTER_PORT" in os.environ
+    )
+
+
 def run(config):
     r"""
-    Begin running the experiment.
+    Run training job (one worker if using distributed training).
 
     Parameters
     ----------
     config : argparse.Namespace or OmegaConf
         The configuration for this experiment.
     """
-    ngpus_per_node = torch.cuda.device_count()
-    config.world_size = ngpus_per_node * config.node_count
-    config.distributed = config.world_size > 1
-    config.batch_size = config.batch_size_per_gpu * config.world_size
-
-    if config.distributed:
-        # Use torch.multiprocessing.spawn to launch distributed processes: the
-        # run_one_worker process function
-        torch.multiprocessing.spawn(
-            run_one_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, config)
-        )
-    else:
-        # Simply call main_worker function once
-        run_one_worker(config.gpu, ngpus_per_node, config)
-
-
-def run_one_worker(gpu, ngpus_per_node, config):
-    r"""
-    Run one worker in the distributed training process.
-
-    Parameters
-    ----------
-    gpu : int
-        The GPU index of this worker, relative to this node.
-    ngpus_per_node : int
-        The number of GPUs per node.
-    config : argparse.Namespace or OmegaConf
-        The configuration for this experiment.
-    """
-    config.gpu = gpu
+    if config.log_wandb:
+        # Lazy import of wandb, since logging to wandb is optional
+        import wandb
 
     if config.seed is not None:
         utils.set_rng_seeds_fixed(config.seed)
 
     if config.deterministic:
-        print("Running in deterministic cuDNN mode. Performance may be slower.")
+        print(
+            "Running in deterministic cuDNN mode. Performance may be slower, but more reproducible."
+        )
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
+    # DISTRIBUTION ============================================================
+    # Setup for distributed training
+    config.distributed = check_is_distributed()
+    config.world_size = int(os.environ.get("WORLD_SIZE", 1))
+    # Work out the total batch size depending on the number of GPUs we are using
+    config.batch_size = config.batch_size_per_gpu * config.world_size
+
+    if config.distributed:
+        # For multiprocessing distributed training, gpu rank needs to be
+        # set to the global rank among all the processes.
+        config.global_rank = int(os.environ["RANK"])
+        config.local_rank = int(os.environ["LOCAL_RANK"])
+        print(f"GPU rank {config.global_rank} of {config.world_size}")
+        print(
+            "Communicating with master worker"
+            f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
+        )
+        torch.distributed.init_process_group(backend="nccl")
+        torch.distributed.barrier()
+    else:
+        config.global_rank = 0
+
     # Suppress printing if this is not the master process for the node
-    if config.distributed and config.gpu != 0:
+    if config.distributed and config.local_rank != 0:
 
         def print_pass(*args, **kwargs):
             pass
@@ -82,44 +97,22 @@ def run_one_worker(gpu, ngpus_per_node, config):
     print()
     print(config)
     print()
-    print(f"Node rank {config.node_rank}")
     print(
         f"Found {torch.cuda.device_count()} GPUs and"
         f" {len(os.sched_getaffinity(0))} CPUs."
     )
 
-    if config.log_wandb:
-        # Lazy import of wandb, since logging to wandb is optional
-        import wandb
-
-    # DISTRIBUTION ============================================================
-    if config.distributed:
-        # For multiprocessing distributed training, gpu rank needs to be
-        # set to the global rank among all the processes.
-        config.gpu_rank = config.node_rank * ngpus_per_node + gpu
-        print(f"GPU rank {config.gpu_rank} of {config.world_size}")
-        print(
-            f"Communicating with master worker {config.dist_url} via {config.dist_backend}"
-        )
-        torch.distributed.init_process_group(
-            backend=config.dist_backend,
-            init_method=config.dist_url,
-            world_size=config.world_size,
-            rank=config.gpu_rank,
-        )
-        torch.distributed.barrier()
-    else:
-        config.gpu_rank = 0
-
     # Check which device to use
     use_cuda = not config.no_cuda and torch.cuda.is_available()
 
+    if config.distributed and not use_cuda:
+        raise EnvironmentError("Distributed training with NCCL requires CUDA.")
     if not use_cuda:
         device = torch.device("cpu")
-    elif config.gpu is None:
-        device = "cuda"
+    elif config.local_rank is not None:
+        device = f"cuda:{config.local_rank}"
     else:
-        device = "cuda:{}".format(config.gpu)
+        device = "cuda"
 
     print(f"Using device {device}")
 
@@ -152,17 +145,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         checkpoint = torch.load(config.resume, map_location=device)
         keys = vars(get_parser().parse_args("")).keys()
         keys = set(keys).difference(
-            [
-                "resume",
-                "gpu",
-                "rank",
-                "node_rank",
-                "gpu_rank",
-                "dist_backend",
-                "dist_url",
-                "node_count",
-                "workers",
-            ]
+            ["resume", "gpu", "global_rank", "local_rank", "cpu_workers"]
         )
         for key in keys:
             if getattr(checkpoint["config"], key, None) is None:
@@ -270,10 +253,10 @@ def run_one_worker(gpu, ngpus_per_node, config):
     print(classifier)
     print()
 
-    if config.workers is None:
-        config.workers = len(os.sched_getaffinity(0))
+    if config.cpu_workers is None:
+        config.cpu_workers = len(os.sched_getaffinity(0))
 
-    if not torch.cuda.is_available():
+    if not use_cuda:
         print("Using CPU (this will be slow)")
     elif config.distributed:
         # Convert batchnorm into SyncBN, using stats computed from all GPUs
@@ -284,23 +267,16 @@ def run_one_worker(gpu, ngpus_per_node, config):
         # DistributedDataParallel will use all available devices.
         encoder.to(device)
         classifier.to(device)
-        if config.gpu is not None:
-            torch.cuda.set_device(config.gpu)
-            config.workers = int((config.workers + ngpus_per_node - 1) / ngpus_per_node)
-            encoder = nn.parallel.DistributedDataParallel(
-                encoder, device_ids=[config.gpu]
-            )
-            classifier = nn.parallel.DistributedDataParallel(
-                classifier, device_ids=[config.gpu]
-            )
-        else:
-            # DistributedDataParallel will divide and allocate batch_size to all
-            # available GPUs if device_ids are not set
-            encoder = nn.parallel.DistributedDataParallel(encoder)
-            classifier = nn.parallel.DistributedDataParallel(classifier)
+        torch.cuda.set_device(device)
+        encoder = nn.parallel.DistributedDataParallel(
+            encoder, device_ids=[config.local_rank], output_device=config.local_rank
+        )
+        classifier = nn.parallel.DistributedDataParallel(
+            classifier, device_ids=[config.local_rank], output_device=config.local_rank
+        )
     else:
-        if config.gpu is not None:
-            torch.cuda.set_device(config.gpu)
+        if config.local_rank is not None:
+            torch.cuda.set_device(config.local_rank)
         encoder = encoder.to(device)
         classifier = classifier.to(device)
 
@@ -357,7 +333,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         "worker_init_fn": utils.worker_seed_fn,
     }
     if use_cuda:
-        cuda_kwargs = {"num_workers": config.workers, "pin_memory": True}
+        cuda_kwargs = {"num_workers": config.cpu_workers, "pin_memory": True}
         dl_train_kwargs.update(cuda_kwargs)
         dl_test_kwargs.update(cuda_kwargs)
 
@@ -448,7 +424,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     # If we're using wandb, initialize the run, or resume it if the job
     # was preempted.
-    if config.log_wandb and config.gpu_rank == 0:
+    if config.log_wandb and config.global_rank == 0:
         wandb_run_name = config.run_name
         if wandb_run_name is not None and config.run_id is not None:
             wandb_run_name = f"{wandb_run_name}__{config.run_id}"
@@ -468,9 +444,8 @@ def run_one_worker(gpu, ngpus_per_node, config):
                 "wandb_project",
                 "wandb_tags",
                 "wandb_group",
-                "node_rank",
-                "gpu_rank",
-                "gpu",
+                "global_rank",
+                "local_rank",
                 "run_name",
                 "run_id",
             ],
@@ -500,7 +475,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
             f"{config.run_name}__{config.run_id}",
         )
 
-    if config.log_wandb and config.gpu_rank == 0:
+    if config.log_wandb and config.global_rank == 0:
         wandb.config.update(
             {"model_output_dir": config.model_output_dir}, allow_val_change=True
         )
@@ -573,20 +548,20 @@ def run_one_worker(gpu, ngpus_per_node, config):
             # unique seed for the epoch. This means the job is only precisely
             # reproducible if it is rerun with the same number of GPUs (and the same
             # number of CPU workers for the dataloader).
-            utils.set_rng_seeds_fixed(epoch_seed + config.gpu_rank, all_gpu=False)
+            utils.set_rng_seeds_fixed(epoch_seed + config.global_rank, all_gpu=False)
             if isinstance(
                 getattr(dataloader_train, "generator", None), torch.Generator
             ):
                 # Finesse the dataloader's RNG state, if it is not using the
                 # global state.
-                dataloader_train.generator.manual_seed(epoch_seed + config.gpu_rank)
+                dataloader_train.generator.manual_seed(epoch_seed + config.global_rank)
             if isinstance(
                 getattr(dataloader_train.sampler, "generator", None), torch.Generator
             ):
                 # Finesse the sampler's RNG state, if it is not using the
                 # global RNG state.
                 dataloader_train.sampler.generator.manual_seed(
-                    config.seed + epoch + 10000 * config.gpu_rank
+                    config.seed + epoch + 10000 * config.global_rank
                 )
 
         if hasattr(dataloader_train.sampler, "set_epoch"):
@@ -658,7 +633,9 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
         # Save model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         t_start_save = time.time()
-        if config.model_output_dir and (not config.distributed or config.gpu_rank == 0):
+        if config.model_output_dir and (
+            not config.distributed or config.global_rank == 0
+        ):
             print(f"\nSaving model to {ckpt_path_latest}")
             # Save to a temporary file first, then move the temporary file to the target
             # destination. This is to prevent clobbering the checkpoint with a partially
@@ -701,7 +678,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         t_end_epoch = time.time()
 
         # Send training and eval stats for this epoch to wandb
-        if config.log_wandb and config.gpu_rank == 0:
+        if config.log_wandb and config.global_rank == 0:
             pre = "Training/epochwise"
             wandb.log(
                 {
@@ -741,7 +718,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         is_distributed=config.distributed,
     )
     # Send stats to wandb
-    if config.log_wandb and config.gpu_rank == 0:
+    if config.log_wandb and config.global_rank == 0:
         wandb.log(
             {**{f"Eval/Test/{k}": v for k, v in eval_stats.items()}}, step=total_step
         )
@@ -757,7 +734,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
             is_distributed=config.distributed,
         )
         # Send stats to wandb
-        if config.log_wandb and config.gpu_rank == 0:
+        if config.log_wandb and config.global_rank == 0:
             wandb.log(
                 {**{f"Eval/{eval_set}/{k}": v for k, v in eval_stats.items()}},
                 step=total_step,
@@ -794,7 +771,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
         is_distributed=config.distributed,
     )
     # Send stats to wandb
-    if config.log_wandb and config.gpu_rank == 0:
+    if config.log_wandb and config.global_rank == 0:
         wandb.log(
             {**{f"Eval/Train/{k}": v for k, v in eval_stats.items()}}, step=total_step
         )
@@ -964,7 +941,7 @@ def train_one_epoch(
             if config.distributed:
                 # Collate sample images from each GPU
                 log_images = utils.concat_all_gather(log_images)
-            if config.gpu_rank == 0:
+            if config.global_rank == 0:
                 wandb.log(
                     {"Training/stepwise/Train/stimuli": wandb.Image(log_images)},
                     step=total_step,
@@ -988,7 +965,7 @@ def train_one_epoch(
         # Log to wandb
         if (
             config.log_wandb
-            and config.gpu_rank == 0
+            and config.global_rank == 0
             and batch_idx % config.log_interval == 0
         ):
             # Create a log dictionary to send to wandb
@@ -1281,9 +1258,11 @@ def get_parser():
         help="Batch size per GPU for test set. Default: equal to training BATCH_SIZE.",
     )
     group.add_argument(
+        "--cpu-workers",
         "--workers",
+        dest="cpu_workers",
         type=int,
-        help="Number of CPU workers per node. Default: number of CPU cores on node.",
+        help="Number of CPU workers per node. Default: number of CPUs available on device.",
     )
     group.add_argument(
         "--no-cuda",
@@ -1292,39 +1271,11 @@ def get_parser():
     )
     group.add_argument(
         "--gpu",
+        "--local-rank",
+        dest="local_rank",
         default=None,
         type=int,
-        help="Index of GPU to use. Setting this will disable GPU parallelism.",
-    )
-    group.add_argument(
-        "--node-count",
-        default=1,
-        type=int,
-        help="Number of nodes for distributed training.",
-    )
-    group.add_argument(
-        "--node-rank",
-        "--rank",
-        dest="node_rank",
-        default=0,
-        type=int,
-        help="Node rank for distributed training.",
-    )
-    group.add_argument(
-        "--dist-url",
-        default="tcp://localhost:23456",
-        type=str,
-        help="URL used to set up distributed training.",
-    )
-    group.add_argument(
-        "--dist-backend",
-        default="nccl",
-        type=str,
-        help=(
-            "Distributed training backend. Must be supported by"
-            " torch.distributed (one of gloo, mpi, nccl), and supported by"
-            " your GPU server."
-        ),
+        help="Index of GPU to use when training a single process. (Ignored for distributed training.)",
     )
     # Logging args ------------------------------------------------------------
     group = parser.add_argument_group("Debugging and logging")
