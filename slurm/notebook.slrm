@@ -1,13 +1,12 @@
 #!/bin/bash
-#SBATCH --partition=interactive     # Interactive Jupyter notebooks should be on the interactive partition
+#SBATCH --partition=t4v1,t4v2       # Which node partitions to use. Use a comma-separated list if you don't mind which partition: t4v1,t4v2,rtx6000,a40
 #SBATCH --nodes=1                   # Number of nodes to request. Usually use 1 for interactive jobs.
 #SBATCH --tasks-per-node=1          # Number of processes to spawn per node. Should always be set to 1, regardless of number of GPUs!
 #SBATCH --gres=gpu:1                # Number of GPUs per node to request
 #SBATCH --cpus-per-gpu=4            # Number of CPUs to request per GPU (soft maximum of 4 per GPU requested)
 #SBATCH --mem-per-gpu=10G           # RAM per GPU
+#SBATCH --time=16:00:00             # You must specify a maximum run-time if you want to run for more than 2h
 #SBATCH --output=jnb_%j.out         # You'll need to inspect this log file to find out how to connect to the notebook
-#SBATCH --qos=nopreemption          # Only the nopreemption QOS is valid for the interactive partition
-#SBATCH --time=03:00:00             # You must specify a maximum run-time for interactive jobs (up to 3h)
 #SBATCH --job-name=jnb
 
 
