@@ -318,9 +318,11 @@ def fetch_dataset(
     transform_eval : callable, optional
         A function/transform that takes in an PIL image and returns a
         transformed version, to be applied to the evaluation dataset.
-    protoval_split_rate : float, default=0.1
+    protoval_split_rate : float or str, default=0.1
         The fraction of the train data to use for validating when in
-        prototyping mode.
+        prototyping mode. If this is set to "auto", the split rate will be
+        chosen such that the validation partition is the same size as the test
+        partition.
     protoval_split_id : int, default=0
         The identity of the random split used for the train/val partitioning.
         This controls the seed of the folds used for the split, and which
@@ -374,6 +376,15 @@ def fetch_dataset(
         )[0]
         # dataset_val is a copy of the full training set, but with the transform
         # changed to transform_eval
+        # Handle automatic validation partition sizing option.
+        if not isinstance(protoval_split_rate, str):
+            pass
+        elif protoval_split_rate == "auto":
+            # We want the validation set to be the same size as the test set.
+            # This is the same as having a split rate of 1 - test_size.
+            protoval_split_rate = len(dataset_test) / len(dataset_train)
+        else:
+            raise ValueError(f"Unsupported protoval_split_rate: {protoval_split_rate}")
         # Create the train/val split using these dataset objects.
         dataset_train, dataset_val = create_train_val_split(
             dataset_train,
