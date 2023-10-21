@@ -35,7 +35,7 @@ def get_timm_encoder(model_name, pretrained=False, in_chans=3):
         model_name = "hf-hub:timm/" + model_name
 
     # We request the model without the classification head (num_classes=0)
-    # to get it as an encoder-only model
+    # to get it is an encoder-only model
     encoder = timm.create_model(
         model_name, pretrained=pretrained, num_classes=0, in_chans=in_chans
     )
