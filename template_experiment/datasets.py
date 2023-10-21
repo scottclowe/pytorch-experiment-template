@@ -260,7 +260,7 @@ def fetch_image_dataset(
         if root:
             pass
         elif host == "vaughan":
-            root = "/scratch/ssd002/datasets/"
+            root = "/scratch/ssd004/datasets/"
         elif host == "mars":
             root = "/scratch/gobi1/datasets/"
         else:
