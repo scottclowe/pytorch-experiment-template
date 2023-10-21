@@ -53,6 +53,7 @@ if false; then
     # much output.
     echo "------------------------------------"
     echo "df -h:"
+    # Print header, then sort the rows alphabetically by mount point
     df -h --output=target,pcent,size,used,avail,source | head -n 1
     df -h --output=target,pcent,size,used,avail,source | tail -n +2 | sort -h
     echo ""
