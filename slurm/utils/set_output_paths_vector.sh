@@ -14,7 +14,7 @@ fi
 # Vector provides a fast parallel filesystem local to the GPU nodes, dedicated
 # for checkpointing. It is mounted under /checkpoint. It is strongly
 # recommended that you keep your intermediary checkpoints under this directory
-CKPT_DIR="/checkpoint/${USER}/${PROJECT_NAME}__${JOB_LABEL}"
+CKPT_DIR="/checkpoint/${USER}/${SLURM_JOB_ID}"
 
 echo "CKPT_DIR = $CKPT_DIR"
 echo ""
