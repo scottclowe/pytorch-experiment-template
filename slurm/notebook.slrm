@@ -33,7 +33,7 @@ date
 echo ""
 echo "Running ~/.bashrc"
 source ~/.bashrc
-echo ""
+
 # Activate virtual environment
 ENVNAME="$PROJECT_NAME"
 echo "Activating environment $ENVNAME"
