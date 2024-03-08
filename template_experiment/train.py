@@ -128,7 +128,7 @@ def run_one_worker(gpu, ngpus_per_node, config):
 
     print(f"Using device {device}")
 
-    # RESTORE OMITTED CONFIG FROM RESUMPTION ==================================
+    # RESTORE OMITTED CONFIG FROM RESUMPTION CHECKPOINT =======================
     checkpoint = None
     if not config.resume:
         # Not trying to resume from a checkpoint
