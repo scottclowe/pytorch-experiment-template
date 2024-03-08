@@ -1394,6 +1394,8 @@ def get_parser():
     )
     group.add_argument(
         "--disable-wandb",
+        "--no-wandb",
+        dest="disable_wandb",
         action="store_true",
         help="Overrides --log-wandb and ensures wandb is always disabled.",
     )
