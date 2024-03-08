@@ -417,13 +417,13 @@ the following steps.
 
 #. Wait for the job to start running. You can monitor it with::
 
-        squeue -u "$USER"
+        squeue --me
 
    Note the job id of the notebook job. e.g.:
 
    .. code-block:: none
 
-        (template-experiment) slowe@v2:~/pytorch-experiment-template$ squeue -u "$USER"
+        (template-experiment) slowe@v2:~/pytorch-experiment-template$ squeue --me
              JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
           10618891 interacti      jnb    slowe  R       1:07      1 gpu026
 
