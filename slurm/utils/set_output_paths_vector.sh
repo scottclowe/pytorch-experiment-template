@@ -33,25 +33,37 @@ ln -sfn "$CKPT_DIR" "$PWD/checkpoints_working/$SLURM_JOB_NAME"
 # 48 hours
 touch "$CKPT_DIR/DELAYPURGE"
 
+echo "Current contents of ${CKPT_DIR}:"
+ls -lh "${CKPT_DIR}"
+echo ""
+
 # Specify an output directory to place checkpoints for long term storage once
 # the job is finished, and ensure this directory is added as a symlink within
 # the current directory as well.
 # OUTPUT_DIR is the directory that will contain all completed jobs for this
 # project.
-OUTPUT_DIR="/scratch/hdd001/home/$USER/checkpoints/$PROJECT_NAME"
-# JOB_OUTPUT_DIR will contain the outputs from this job.
-JOB_OUTPUT_DIR="$OUTPUT_DIR/$JOB_LABEL"
-
-echo "Current contents of ${CKPT_DIR}:"
-ls -lh "${CKPT_DIR}"
-echo ""
-echo "JOB_OUTPUT_DIR = $JOB_OUTPUT_DIR"
-if [[ -d "$JOB_OUTPUT_DIR" ]];
+if [[ -d "/scratch/hdd001/home/$USER" ]];
 then
-    echo "Current contents of ${JOB_OUTPUT_DIR}"
-    ls -lh "${JOB_OUTPUT_DIR}"
+    OUTPUT_DIR="/scratch/hdd001/home/$USER"
+elif [[ -d "/scratch/ssd004/scratch/$USER" ]];
+then
+    OUTPUT_DIR="/scratch/ssd004/scratch/$USER"
+else
+    OUTPUT_DIR=""
 fi
-echo ""
+if [[ "$OUTPUT_DIR" != "" ]];
+then
+    OUTPUT_DIR="$OUTPUT_DIR/checkpoints/$PROJECT_NAME"
+    # JOB_OUTPUT_DIR will contain the outputs from this job.
+    JOB_OUTPUT_DIR="$OUTPUT_DIR/$JOB_LABEL"
+    echo "JOB_OUTPUT_DIR = $JOB_OUTPUT_DIR"
+    if [[ -d "$JOB_OUTPUT_DIR" ]];
+    then
+        echo "Current contents of ${JOB_OUTPUT_DIR}"
+        ls -lh "${JOB_OUTPUT_DIR}"
+    fi
+    echo ""
+fi
 
 if [[ "$start_time" != "" ]];
 then
