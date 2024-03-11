@@ -36,11 +36,5 @@ echo "torch info:"
 python -c "import torch; print(f'pytorch={torch.__version__}, cuda={torch.cuda.is_available()}, gpus={torch.cuda.device_count()}')"
 python -c "import torch; print(str(torch.ones(1, device=torch.device('cuda')))); print('able to use cuda')"
 echo ""
-if [[ "$start_time" != "" ]];
-then
-    echo "------------------------------------"
-    elapsed=$(( SECONDS - start_time ))
-    eval "echo Running total elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
-fi
 echo "========================================================================"
 echo ""

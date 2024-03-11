@@ -65,11 +65,5 @@ then
     echo ""
 fi
 
-if [[ "$start_time" != "" ]];
-then
-    echo "------------------------------------"
-    elapsed=$(( SECONDS - start_time ))
-    eval "echo Running total elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
-fi
 echo "========================================================================"
 echo ""
