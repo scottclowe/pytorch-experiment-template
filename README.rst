@@ -77,23 +77,21 @@ When creating a new repository from this template, these are the steps to follow
 
 #.  Rename the directory ``template_experiment`` to be the ``path`` variable you just added to ``__meta__.py``.::
 
-      # Define PROJECT_HYPH as your actual project name (use hyphens instead of underscores or spaces)
-      PROJECT_HYPH=your-actual-project-name-with-hyphens-for-spaces
+      # Define PROJ_HYPH as your actual project name (use hyphens instead of underscores or spaces)
+      PROJ_HYPH=your-actual-project-name-with-hyphens-for-spaces
 
       # Automatically convert hyphens to underscores to get the directory name
-      PROJECT_DIRN="${PROJECT_HYPH//-/_}"
+      PROJ_DIRN="${PROJ_HYPH//-/_}"
       # Rename the directory
-      mv template_experiment "$PROJECT_DIRN"
+      mv template_experiment "$PROJ_DIRN"
 
 #.  Change references to ``template_experiment`` and ``template-experiment``
     to your path variable.
 
     This can be done with the sed command::
 
-        sed -i "s/template_experiment/$PROJECT_DIRN/" \
-            "$PROJECT_DIRN"/*.py setup.py slurm/*.slrm
-        sed -i "s/template-experiment/$PROJECT_HYPH/" \
-            "$PROJECT_DIRN"/*.py setup.py slurm/*.slrm
+        sed -i "s/template_experiment/$PROJ_DIRN/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm
+        sed -i "s/template-experiment/$PROJ_HYPH/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm
 
     Which will make changes in the following places.
 
