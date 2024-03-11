@@ -75,7 +75,7 @@ When creating a new repository from this template, these are the steps to follow
 
     Other fields to enter should be self-explanatory.
 
-#.  Rename the directory ``template_experiment`` to be the ``path`` variable you just added to ``__meta__.py``.::
+#.  Rename the directory ``template_experiment`` to be the ``path`` variable you just added to ``__meta__.py``::
 
       # Define PROJ_HYPH as your actual project name (use hyphens instead of underscores or spaces)
       PROJ_HYPH=your-actual-project-name-with-hyphens-for-spaces
@@ -134,7 +134,7 @@ When creating a new repository from this template, these are the steps to follow
     .. highlight:: bash
 
 #.  Swap out the contents of ``README.rst`` with an initial description of your project.
-    If you prefer, you can use markdown (``README.md``) instead of rST.::
+    If you prefer, you can use markdown (``README.md``) instead of rST::
 
       git rm README.rst
       # touch README.rst
@@ -164,7 +164,7 @@ Vector one-time set-up
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Run this code block to install miniconda before you make your first environment
-(you don't need to re-run this every time you start a new project).::
+(you don't need to re-run this every time you start a new project)::
 
     # Login to Vector
     ssh USERNAME@v.vectorinstitute.ai
@@ -206,7 +206,7 @@ Follow this next step if you want to use `Weights and Biases`_ to log your exper
 Weights and Biases is an online service for tracking your experiments which is
 free for academic usage.
 To set this up, you need to install the wandb pip package, and you'll need to
-`create a Weights and Biases account <wandb-signup_>`_ if you don't already have one.::
+`create a Weights and Biases account <wandb-signup_>`_ if you don't already have one::
 
     # (On v.vectorinstitute.ai)
     # You need to run the conda setup instructions that miniconda added to
@@ -236,7 +236,7 @@ Project one-time set-up
 
 Run this code block once every time you start a new project from this template.
 Change ENVNAME to equal the name of your project. This code will then create a
-new virtual environment to use for the project.::
+new virtual environment to use for the project::
 
     # (On v.vectorinstitute.ai)
     # You need to run the conda setup instructions that miniconda added to
@@ -267,7 +267,7 @@ new virtual environment to use for the project.::
 Resuming work on an existing project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run this code block when you want to resume work on an existing project.::
+Run this code block when you want to resume work on an existing project::
 
     # (On v.vectorinstitute.ai)
     # Run conda setup in ~/.bashrc if you it hasn't already been run in this
@@ -375,7 +375,7 @@ Example commands
 
         sbatch --job-name=exp_cf10_rn18-pt_4gpu --gres=gpu:4 slurm/train.slrm --pretrained
 
-  or increasing the number of nodes being requested.::
+  or increasing the number of nodes being requested::
 
         sbatch --job-name=exp_cf10_rn18-pt_2x1gpu --nodes=2 slurm/train.slrm --pretrained
 
@@ -463,7 +463,7 @@ the following steps.
    port 8887.
 
 #. Open a browser on your local machine and navigate to http://localhost:8887
-   (or whatever port you chose in the previous step).::
+   (or whatever port you chose in the previous step)::
 
         sensible-browser http://localhost:8887
 
