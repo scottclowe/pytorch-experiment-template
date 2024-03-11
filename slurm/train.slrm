@@ -94,15 +94,69 @@ echo "Running slurm/utils/report_env_config.sh"
 source "slurm/utils/report_env_config.sh"
 
 # Set the JOB_LABEL environment variable
-# N.B. This script assigns the $JOB_LABEL environment variables that we use later.
-echo "Running slurm/utils/set_job-label.sh"
-source "slurm/utils/set_job-label.sh"
+echo "-------- Setting JOB_LABEL ---------------------------------------------"
+echo ""
+# Decide the name of the paths to use for saving this job
+if [ "$SLURM_ARRAY_TASK_COUNT" != "" ] && [ "$SLURM_ARRAY_TASK_COUNT" -gt 1 ];
+then
+    JOB_ID="${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}";
+else
+    JOB_ID="${SLURM_JOB_ID}";
+fi
+# Decide the name of the paths to use for saving this job
+JOB_LABEL="${SLURM_JOB_NAME}__${JOB_ID}";
+echo "JOB_ID = $JOB_ID"
+echo "JOB_LABEL = $JOB_LABEL"
+echo ""
 
 # Set checkpoint directory ($CKPT_DIR) environment variables
-# N.B. This script assigns some environment variables ($CKPT_DIR) that we use later,
-# and initalizes our checkpoint output directory and adds a local symbolic link to it.
-echo "Running slurm/utils/set_output_paths_vector.sh"
-source "slurm/utils/set_output_paths_vector.sh"
+echo "-------- Setting checkpoint and output path variables ------------------"
+echo ""
+# Vector provides a fast parallel filesystem local to the GPU nodes, dedicated
+# for checkpointing. It is mounted under /checkpoint. It is strongly
+# recommended that you keep your intermediary checkpoints under this directory
+CKPT_DIR="/checkpoint/${USER}/${SLURM_JOB_ID}"
+echo "CKPT_DIR = $CKPT_DIR"
+echo ""
+# Ensure the checkpoint dir exists
+mkdir -p "$CKPT_DIR"
+# In the future, the checkpoint directory will be removed immediately after the
+# job has finished. If you would like the file to stay longer, and create an
+# empty "delay purge" file as a flag so the system will delay the removal for
+# 48 hours
+touch "$CKPT_DIR/DELAYPURGE"
+echo "Current contents of ${CKPT_DIR}:"
+ls -lh "${CKPT_DIR}"
+echo ""
+# Create a symlink to the job's checkpoint directory within a subfolder of the
+# current directory (repository directory) named "checkpoint_working".
+mkdir -p "checkpoints_working"
+ln -sfn "$CKPT_DIR" "$PWD/checkpoints_working/$SLURM_JOB_NAME"
+# Specify an output directory to place checkpoints for long term storage once
+# the job is finished.
+if [[ -d "/scratch/hdd001/home/$USER" ]];
+then
+    OUTPUT_DIR="/scratch/hdd001/home/$USER"
+elif [[ -d "/scratch/ssd004/scratch/$USER" ]];
+then
+    OUTPUT_DIR="/scratch/ssd004/scratch/$USER"
+else
+    OUTPUT_DIR=""
+fi
+if [[ "$OUTPUT_DIR" != "" ]];
+then
+    # Directory OUTPUT_DIR will contain all completed jobs for this project.
+    OUTPUT_DIR="$OUTPUT_DIR/checkpoints/$PROJECT_NAME"
+    # Subdirectory JOB_OUTPUT_DIR will contain the outputs from this job.
+    JOB_OUTPUT_DIR="$OUTPUT_DIR/$JOB_LABEL"
+    echo "JOB_OUTPUT_DIR = $JOB_OUTPUT_DIR"
+    if [[ -d "$JOB_OUTPUT_DIR" ]];
+    then
+        echo "Current contents of ${JOB_OUTPUT_DIR}"
+        ls -lh "${JOB_OUTPUT_DIR}"
+    fi
+    echo ""
+fi
 
 # Save a list of installed packages and their versions to a file in the output directory
 conda env export > "$CKPT_DIR/environment.yml"
