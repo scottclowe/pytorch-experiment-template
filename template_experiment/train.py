@@ -30,13 +30,6 @@ def check_is_distributed():
     bool
         Whether the job is running in distributed mode.
     """
-    print(
-        f"WORLD_SIZE={os.environ.get('WORLD_SIZE', None)}"
-        f"  RANK={os.environ.get('RANK', None)}"
-        f"  LOCAL_RANK={os.environ.get('LOCAL_RANK', None)}"
-        f"  MASTER_ADDR={os.environ.get('MASTER_ADDR', None)}"
-        f"  MASTER_PORT={os.environ.get('MASTER_PORT', None)}"
-    )
     return (
         "WORLD_SIZE" in os.environ
         and "RANK" in os.environ
