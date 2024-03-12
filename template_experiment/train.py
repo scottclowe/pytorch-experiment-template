@@ -102,9 +102,9 @@ def run(config):
         # set to the global rank among all the processes.
         config.global_rank = int(os.environ["RANK"])
         config.local_rank = int(os.environ["LOCAL_RANK"])
-        print(f"GPU rank {config.global_rank} of {config.world_size}")
         print(
-            "Communicating with master worker"
+            f"GPU rank {config.global_rank} of {config.world_size}."
+            " Communicating with master worker"
             f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
         )
         torch.distributed.init_process_group(backend="nccl")
