@@ -422,25 +422,25 @@ def run(config):
         wandb_run_name = config.run_name
         if wandb_run_name is not None and config.run_id is not None:
             wandb_run_name = f"{wandb_run_name}__{config.run_id}"
+        EXCLUDED_WANDB_CONFIG_KEYS = [
+            "log_wandb",
+            "wandb_entity",
+            "wandb_project",
+            "global_rank",
+            "local_rank",
+            "run_name",
+            "run_id",
+            "model_output_dir",
+        ]
         utils.init_or_resume_wandb_run(
             config.model_output_dir,
             name=wandb_run_name,
             id=config.run_id,
             entity=config.wandb_entity,
             project=config.wandb_project,
-            config=config,
+            config=wandb.helper.parse_config(config, exclude=EXCLUDED_WANDB_CONFIG_KEYS),
             job_type="train",
             tags=["prototype" if config.prototyping else "final"],
-            config_exclude_keys=[
-                "log_wandb",
-                "wandb_entity",
-                "wandb_project",
-                "global_rank",
-                "local_rank",
-                "run_name",
-                "run_id",
-                "model_output_dir",
-            ],
         )
         # If a run_id was not supplied at the command prompt, wandb will
         # generate a name. Let's use that as the run_name.
