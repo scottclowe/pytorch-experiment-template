@@ -223,7 +223,8 @@ export NCCL_IB_DISABLE=1
 # We pass on to train.py an arary of arbitrary extra arguments given to this
 # slurm script contained in the "$@" magic variable.
 
-torchrun \
+srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
+    torchrun \
     --nnodes="$SLURM_JOB_NUM_NODES" \
     --nproc_per_node="$SLURM_GPUS_ON_NODE" \
     --rdzv_id="$SLURM_JOB_ID" \
