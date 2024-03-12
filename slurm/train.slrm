@@ -210,9 +210,25 @@ else
 fi
 echo ""
 
-# export NCCL_DEBUG=INFO  # Enable this to debug NCCL errors
-export TORCH_NCCL_BLOCKING_WAIT=1  # Set this when using the NCCL backend for inter-GPU communication.
+# NCCL options ----------------------------------------------------------------
+
+# This is needed to print debug info from NCCL, can be removed if all goes well
+# export NCCL_DEBUG=INFO
+
+# This is needed to avoid NCCL to use ifiniband, which the cluster does not have
 export NCCL_IB_DISABLE=1
+
+# This is to tell NCCL to use bond interface for network communication
+if [[ "${SLURM_JOB_PARTITION}" == "t4v2" ]] || [[ "${SLURM_JOB_PARTITION}" == "rtx6000" ]];
+then
+    echo "Using NCCL_SOCKET_IFNAME=bond0 on ${SLURM_JOB_PARTITION}"
+    export NCCL_SOCKET_IFNAME=bond0
+fi
+
+# Set this when using the NCCL backend for inter-GPU communication.
+export TORCH_NCCL_BLOCKING_WAIT=1
+# -----------------------------------------------------------------------------
+
 #
 # We call srun within the sbatch script. It will automatically (by SLURM magic)
 # be launched once per task. We asked for one task per GPU, so we will get all
