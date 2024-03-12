@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --partition=t4v1,t4v2       # Which node partitions to use. Use a comma-separated list if you don't mind which partition: t4v1,t4v2,rtx6000,a40
 #SBATCH --nodes=1                   # Number of nodes to request. Can increase to --nodes=2, etc, for more GPUs (spread out over different nodes).
-#SBATCH --gres=gpu:1                # Number of GPUs per node. Can increase to --gres=gpu:2, etc, for more GPUs (together on the same node).
-#SBATCH --ntasks-per-gpu=1          # Number of tasks that will be spawned per GPU. Should always be set to 1.
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-gpu=4            # Number of CPUs per GPU. Soft maximum of 4 per GPU requested on t4, 8 otherwise. Hard maximum of 32 per node.
 #SBATCH --mem-per-gpu=10G           # RAM per GPU. Soft maximum of 20G per GPU requested on t4v2, 41G otherwise. Hard maximum of 167G per node.
 #SBATCH --time=08:00:00             # You must specify a maximum run-time if you want to run for more than 2h
