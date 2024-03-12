@@ -176,19 +176,16 @@ def run(config):
                     f" {getattr(config, key)} (ours) vs {getattr(checkpoint['config'], key)} (checkpoint)"
                 )
 
-    if config.start_epoch is not None:
-        # A specified start_epoch will always override the resume epoch
-        start_epoch = config.start_epoch
-    elif checkpoint is not None:
+    if checkpoint is None:
+        # Our epochs go from 1 to n_epoch, inclusive
+        start_epoch = 1
+    else:
         # Continue from where we left off
         start_epoch = checkpoint["epoch"] + 1
         if config.seed is not None:
             # Make sure we don't get the same behaviour as we did on the
             # first epoch repeated on this resumed epoch.
             utils.set_rng_seeds_fixed(config.seed + start_epoch, all_gpu=False)
-    else:
-        # Our epochs go from 1 to n_epoch, inclusive
-        start_epoch = 1
 
     # MODEL ===================================================================
 
@@ -1100,12 +1097,6 @@ def get_parser():
         type=int,
         default=5,
         help="Number of epochs to train for. Default: %(default)s",
-    )
-    group.add_argument(
-        "--start-epoch",
-        type=int,
-        default=None,
-        help="Epoch to start training from (default is 1, unless resuming).",
     )
     group.add_argument(
         "--lr",
