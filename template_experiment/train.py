@@ -125,7 +125,7 @@ def run(config):
         config.global_rank = 0
 
     # Suppress printing if this is not the master process for the node
-    if config.distributed and config.local_rank != 0:
+    if config.distributed and config.global_rank != 0:
 
         def print_pass(*args, **kwargs):
             pass
