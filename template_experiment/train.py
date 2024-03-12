@@ -102,6 +102,11 @@ def run(config):
     setup_slurm_distributed()
     config.world_size = int(os.environ.get("WORLD_SIZE", 1))
     config.distributed = check_is_distributed()
+    if config.world_size > 1 and not config.distributed:
+        raise EnvironmentError(
+            f"WORLD_SIZE is {config.world_size}, but not all other required"
+            " environment variables for distributed training are set."
+        )
     # Work out the total batch size depending on the number of GPUs we are using
     config.batch_size = config.batch_size_per_gpu * config.world_size
 
