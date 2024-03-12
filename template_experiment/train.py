@@ -321,10 +321,8 @@ def run(config):
         "shuffle": True,
         "worker_init_fn": utils.worker_seed_fn,
     }
-    if config.test_batch_size_per_gpu is None:
-        config.test_batch_size_per_gpu = config.batch_size_per_gpu
     dl_test_kwargs = {
-        "batch_size": config.test_batch_size_per_gpu,
+        "batch_size": config.batch_size_per_gpu,
         "drop_last": False,
         "sampler": None,
         "shuffle": False,
@@ -1189,13 +1187,6 @@ def get_parser():
             "Batch size per GPU. The total batch size will be this value times"
             " the total number of GPUs used. Default: %(default)s"
         ),
-    )
-    group.add_argument(
-        "--test-batch-size",
-        dest="test_batch_size_per_gpu",
-        type=int,
-        default=None,
-        help="Batch size per GPU for test set. Default: equal to training BATCH_SIZE.",
     )
     group.add_argument(
         "--cpu-workers",
