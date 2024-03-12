@@ -42,6 +42,10 @@ def check_is_distributed():
 def setup_slurm_distributed():
     r"""
     Use SLURM environment variables to set up environment variables needed for DDP.
+
+    Note: This is not used when using torchrun, as that sets RANK etc. for us,
+    but is useful if you're using srun without torchrun (i.e. using srun within
+    the sbatch file to lauching one task per GPU).
     """
     if "WORLD_SIZE" in os.environ:
         pass
