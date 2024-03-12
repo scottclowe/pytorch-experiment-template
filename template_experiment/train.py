@@ -433,16 +433,13 @@ def run(config):
             id=config.run_id,
             entity=config.wandb_entity,
             project=config.wandb_project,
-            group=config.wandb_group,
             config=config,
             job_type="train",
-            tags=["prototype" if config.prototyping else "final"] + config.wandb_tags,
+            tags=["prototype" if config.prototyping else "final"],
             config_exclude_keys=[
                 "log_wandb",
                 "wandb_entity",
                 "wandb_project",
-                "wandb_tags",
-                "wandb_group",
                 "global_rank",
                 "local_rank",
                 "run_name",
@@ -1277,18 +1274,6 @@ def get_parser():
         help="Name of project on wandb, where these runs will be saved. Default: %(default)s",
     )
     group.add_argument(
-        "--wandb-tags",
-        nargs="+",
-        type=str,
-        help="Tag(s) to add to wandb run. Multiple tags can be given, separated by spaces.",
-    )
-    group.add_argument(
-        "--wandb-group",
-        type=str,
-        default="",
-        help="Used to group wandb runs together, to run stats on them together.",
-    )
-    group.add_argument(
         "--run-name",
         type=str,
         help="Human-readable identifier for the model run or job. Used to name the run on wandb.",
@@ -1312,9 +1297,6 @@ def cli():
     del config.disable_wandb
     # Set protoval_split_id from prototyping, and turn prototyping into a bool
     config.prototyping = config.protoval_split_id is not None
-    # Handle unspecified wandb_tags: if None, set to empty list
-    if config.wandb_tags is None:
-        config.wandb_tags = []
     return run(config)
 
 
