@@ -39,6 +39,33 @@ def check_is_distributed():
     )
 
 
+def setup_slurm_distributed():
+    r"""
+    Use SLURM environment variables to set up environment variables needed for DDP.
+    """
+    if "WORLD_SIZE" in os.environ:
+        pass
+    elif "SLURM_NNODES" in os.environ and "SLURM_GPUS_ON_NODE" in os.environ:
+        os.environ["WORLD_SIZE"] = int(os.environ["SLURM_NNODES"]) * int(
+            os.environ["SLURM_GPUS_ON_NODE"]
+        )
+    elif "SLURM_NPROCS" in os.environ:
+        os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"]
+    if "RANK" not in os.environ and "SLURM_PROCID" in os.environ:
+        os.environ["RANK"] = os.environ["SLURM_PROCID"]
+        if int(os.environ["RANK"]) > 0 and "WORLD_SIZE" not in os.environ:
+            raise EnvironmentError(
+                f"SLURM_PROCID is {os.environ['SLURM_PROCID']}, implying"
+                " distributed training, but WORLD_SIZE could not be determined."
+            )
+    if "LOCAL_RANK" not in os.environ and "SLURM_LOCALID" in os.environ:
+        os.environ["LOCAL_RANK"] = os.environ["SLURM_LOCALID"]
+    if "MASTER_ADDR" not in os.environ and "SLURM_NODELIST" in os.environ:
+        os.environ["MASTER_ADDR"] = os.environ["SLURM_NODELIST"].split("-")[0]
+    if "MASTER_PORT" not in os.environ and "SLURM_JOB_ID" in os.environ:
+        os.environ["MASTER_PORT"] = 49152 + (int(os.environ["SLURM_JOB_ID"]) % 16384)
+
+
 def run(config):
     r"""
     Run training job (one worker if using distributed training).
@@ -64,8 +91,9 @@ def run(config):
 
     # DISTRIBUTION ============================================================
     # Setup for distributed training
-    config.distributed = check_is_distributed()
+    setup_slurm_distributed()
     config.world_size = int(os.environ.get("WORLD_SIZE", 1))
+    config.distributed = check_is_distributed()
     # Work out the total batch size depending on the number of GPUs we are using
     config.batch_size = config.batch_size_per_gpu * config.world_size
 
