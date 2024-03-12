@@ -6,6 +6,7 @@
 #SBATCH --cpus-per-gpu=4            # Number of CPUs per GPU. Soft maximum of 4 per GPU requested on t4, 8 otherwise. Hard maximum of 32 per node.
 #SBATCH --mem-per-gpu=10G           # RAM per GPU. Soft maximum of 20G per GPU requested on t4v2, 41G otherwise. Hard maximum of 167G per node.
 #SBATCH --time=08:00:00             # You must specify a maximum run-time if you want to run for more than 2h
+#SBATCH --signal=B:USR1@120         # Send signal SIGUSR1 120 seconds before the job hits the time limit
 #SBATCH --output=slogs/%x__%A_%a__%n.out
                                     # %x=job-name, %A=job ID, %a=array value, %n=node rank, %t=task rank, %N=hostname
                                     # Note: You must create output directory "slogs" before launching job, otherwise it will immediately
@@ -26,6 +27,16 @@ PROJECT_DIRN="${PROJECT_NAME//-/_}"
 # Exit the script if any command hits an error
 set -e
 
+# Set up a handler to requeue the job if it hits the time-limit without terminating
+function term_handler()
+{
+    echo "** Job $SLURM_JOB_NAME ($SLURM_JOB_ID) received SIGUSR1 at $(date) **"
+    echo "** Requeuing job $SLURM_JOB_ID so it can run for longer **"
+    scontrol requeue "${SLURM_JOB_ID}"
+}
+# Call this term_hnadler function when the job recieves the SIGUSR1 signal
+trap term_handler SIGUSR1
+
 # sbatch script for Vector
 # Inspired by:
 # https://github.com/VectorInstitute/TechAndEngineering/blob/master/benchmarks/resnet_torch/sample_script/script.sh
@@ -34,6 +45,7 @@ set -e
 # https://github.com/PrincetonUniversity/multi_gpu_training/tree/main/02_pytorch_ddp
 # https://pytorch.org/docs/stable/elastic/run.html
 # https://pytorch.org/tutorials/intermediate/ddp_tutorial.html
+# https://unix.stackexchange.com/a/146770/154576
 
 # Store the time at which the script was launched, so we can measure how long has elapsed.
 start_time="$SECONDS"
@@ -241,8 +253,12 @@ echo ""
 # is no checkpoint at this path to resume from.
 #
 # We pass on to train.py an arary of arbitrary extra arguments given to this
-# slurm script contained in the "$@" magic variable.
-
+# slurm script contained in the `$@` magic variable.
+#
+# We execute the srun command in the background with `&` (and then check its
+# process ID and wait for it to finish before continuing) so the main process
+# can handle the SIGUSR1 signal. Otherwise if a child process is running, the
+# signal will be ignored.
 srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
     torchrun \
     --nnodes="$SLURM_JOB_NUM_NODES" \
@@ -257,7 +273,9 @@ srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
     --log-wandb \
     --run-name="$SLURM_JOB_NAME" \
     --run-id="$JOB_ID" \
-    "${@}"
+    "${@}" &
+child="$!"
+wait "$child"
 
 echo ""
 echo "------------------------------------"
