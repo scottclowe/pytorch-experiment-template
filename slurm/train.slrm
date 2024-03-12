@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --partition=t4v1,t4v2       # Which node partitions to use. Use a comma-separated list if you don't mind which partition: t4v1,t4v2,rtx6000,a40
 #SBATCH --nodes=1                   # Number of nodes to request. Can increase to --nodes=2, etc, for more GPUs (spread out over different nodes).
-#SBATCH --ntasks-per-node=1
-#SBATCH --gpus-per-task=1
+#SBATCH --tasks-per-node=1          # Number of processes to spawn per node. Should always be set to 1, regardless of number of GPUs!
+#SBATCH --gres=gpu:1                # Number of GPUs per node. Can increase to --gres=gpu:2, etc, for more GPUs (together on the same node).
 #SBATCH --cpus-per-gpu=4            # Number of CPUs per GPU. Soft maximum of 4 per GPU requested on t4, 8 otherwise. Hard maximum of 32 per node.
 #SBATCH --mem-per-gpu=10G           # RAM per GPU. Soft maximum of 20G per GPU requested on t4v2, 41G otherwise. Hard maximum of 167G per node.
 #SBATCH --time=08:00:00             # You must specify a maximum run-time if you want to run for more than 2h
@@ -230,9 +230,9 @@ export TORCH_NCCL_BLOCKING_WAIT=1
 # -----------------------------------------------------------------------------
 
 #
-# We call srun within the sbatch script. It will automatically (by SLURM magic)
-# be launched once per task. We asked for one task per GPU, so we will get all
-# our parallel workers launched here.
+# We use the torchrun command to launch our main python script.
+# It will automatically set up the necessary environment variables for DDP,
+# and will launch the script once for each GPU on each node.
 #
 # We pass the CKPT_DIR environment variable on as the output path for our
 # python script, and also try to resume from a checkpoint in this directory
@@ -242,7 +242,14 @@ export TORCH_NCCL_BLOCKING_WAIT=1
 # We pass on to train.py an arary of arbitrary extra arguments given to this
 # slurm script contained in the "$@" magic variable.
 
-srun "$PROJECT_DIRN/train.py" \
+srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
+    torchrun \
+    --nnodes="$SLURM_JOB_NUM_NODES" \
+    --nproc_per_node="$SLURM_GPUS_ON_NODE" \
+    --rdzv_id="$SLURM_JOB_ID" \
+    --rdzv_backend=c10d \
+    --rdzv_endpoint="$MASTER_ADDR:$MASTER_PORT" \
+    "$PROJECT_DIRN/train.py" \
     --cpu-workers="$SLURM_CPUS_PER_GPU" \
     --seed="$SEED" \
     --model-output-dir="$CKPT_DIR" \
