@@ -32,11 +32,11 @@ def check_is_distributed():
         Whether the job is running in distributed mode.
     """
     print(
-        f"WORLD_SIZE = {os.environ.get('WORLD_SIZE', None)}"
-        f";  RANK = {os.environ.get('RANK', None)}"
-        f";  LOCAL_RANK = {os.environ.get('LOCAL_RANK', None)}"
-        f";  MASTER_ADDR = {os.environ.get('MASTER_ADDR', None)}"
-        f";  MASTER_PORT = {os.environ.get('MASTER_PORT', None)}"
+        f"WORLD_SIZE={os.environ.get('WORLD_SIZE', None)}"
+        f"  RANK={os.environ.get('RANK', None)}"
+        f"  LOCAL_RANK={os.environ.get('LOCAL_RANK', None)}"
+        f"  MASTER_ADDR={os.environ.get('MASTER_ADDR', None)}"
+        f"  MASTER_PORT={os.environ.get('MASTER_PORT', None)}"
     )
     return (
         "WORLD_SIZE" in os.environ
@@ -116,8 +116,9 @@ def run(config):
         config.global_rank = int(os.environ["RANK"])
         config.local_rank = int(os.environ["LOCAL_RANK"])
         print(
-            f"GPU rank {config.global_rank} of {config.world_size} on {gethostname()}"
-            " Communicating with master worker"
+            f"Rank {config.global_rank} of {config.world_size} on {gethostname()}"
+            f" (local GPU {config.local_rank} of {torch.cuda.device_count()})."
+            " Communicating with master at"
             f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
         )
         torch.distributed.init_process_group(backend="nccl")
