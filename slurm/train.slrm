@@ -257,6 +257,9 @@ echo "------------------------------------"
 elapsed=$(( SECONDS - start_time ))
 eval "echo Running total elapsed time for restart $SLURM_RESTART_COUNT: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
 echo ""
+# Now the job is finished, remove the symlink to the job's checkpoint directory
+# from checkpoints_working
+rm "$PWD/checkpoints_working/$SLURM_JOB_NAME"
 # By overriding the JOB_OUTPUT_DIR environment variable, we disable saving
 # checkpoints to long-term storage. This is disabled by default to preserve
 # disk space. When you are sure your job config is correct and you are sure
