@@ -416,7 +416,7 @@ def run(config):
 
     # Loss function -----------------------------------------------------------
     # Set up loss function
-    criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing)
+    criterion = nn.CrossEntropyLoss()
 
     # LOGGING =================================================================
     # Setup logging and saving
@@ -1149,12 +1149,6 @@ def get_parser():
         type=str,
         default="OneCycle",
         help="Learning rate scheduler. Default: %(default)s",
-    )
-    group.add_argument(
-        "--label-smoothing",
-        type=float,
-        default=0.0,
-        help="Amount of label smoothing. Default: %(default)s",
     )
     # Output checkpoint args --------------------------------------------------
     group = parser.add_argument_group("Output checkpoint")
