@@ -8,6 +8,7 @@ import time
 import warnings
 from contextlib import nullcontext
 from datetime import datetime
+from socket import gethostname
 
 import torch
 import torch.optim
@@ -30,6 +31,13 @@ def check_is_distributed():
     bool
         Whether the job is running in distributed mode.
     """
+    print(
+        f"WORLD_SIZE = {os.environ.get('WORLD_SIZE', None)}"
+        f";  RANK = {os.environ.get('RANK', None)}"
+        f";  LOCAL_RANK = {os.environ.get('LOCAL_RANK', None)}"
+        f";  MASTER_ADDR = {os.environ.get('MASTER_ADDR', None)}"
+        f";  MASTER_PORT = {os.environ.get('MASTER_PORT', None)}"
+    )
     return (
         "WORLD_SIZE" in os.environ
         and "RANK" in os.environ
@@ -103,7 +111,7 @@ def run(config):
         config.global_rank = int(os.environ["RANK"])
         config.local_rank = int(os.environ["LOCAL_RANK"])
         print(
-            f"GPU rank {config.global_rank} of {config.world_size}."
+            f"GPU rank {config.global_rank} of {config.world_size} on {gethostname()}"
             " Communicating with master worker"
             f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
         )
