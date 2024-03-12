@@ -121,7 +121,6 @@ def run(config):
             f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
         )
         torch.distributed.init_process_group(backend="nccl")
-        torch.distributed.barrier()
     else:
         config.global_rank = 0
 
