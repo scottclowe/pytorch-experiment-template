@@ -211,7 +211,7 @@ fi
 echo ""
 
 # export NCCL_DEBUG=INFO  # Enable this to debug NCCL errors
-export NCCL_BLOCKING_WAIT=1  # Set this when using the NCCL backend for inter-GPU communication.
+export TORCH_NCCL_BLOCKING_WAIT=1  # Set this when using the NCCL backend for inter-GPU communication.
 export NCCL_IB_DISABLE=1
 #
 # We call srun within the sbatch script. It will automatically (by SLURM magic)
