@@ -2,9 +2,39 @@ import os
 import random
 import secrets
 import string
+import warnings
 
 import numpy as np
 import torch
+
+
+def get_num_cpu_available():
+    r"""
+    Get the number of available CPU cores.
+
+    Uses :func:`os.sched_getaffinity` if available, otherwise falls back to
+    :func:`os.cpu_count`.
+
+    Returns
+    -------
+    ncpus : int
+        The number of available CPU cores.
+    """
+    try:
+        # This is the number of CPUs available to this process, which may
+        # be smaller than the number of CPUs on the system.
+        # This command is only available on Unix-like systems.
+        return len(os.sched_getaffinity(0))
+    except Exception:
+        # Fall-back for Windows or other systems which don't support sched_getaffinity
+        warnings.warn(
+            "Unable to determine number of available CPUs available to this python"
+            " process specifically. Falling back to the total number of CPUs on the"
+            " system.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return os.cpu_count()
 
 
 def init_or_resume_wandb_run(output_dir, basename="wandb_runid.txt", **kwargs):

@@ -136,7 +136,7 @@ def run(config):
     print()
     print(
         f"Found {torch.cuda.device_count()} GPUs and"
-        f" {len(os.sched_getaffinity(0))} CPUs."
+        f" {utils.get_num_cpu_available()} CPUs."
     )
 
     # Check which device to use
@@ -284,7 +284,7 @@ def run(config):
     print()
 
     if config.cpu_workers is None:
-        config.cpu_workers = len(os.sched_getaffinity(0))
+        config.cpu_workers = utils.get_num_cpu_available()
 
     if not use_cuda:
         print("Using CPU (this will be slow)")
