@@ -148,9 +148,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
         # our own random cropping, stretching, and flipping.
         train_transform = transforms.Compose(
             [
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.AutoAugment(
                     policy=transforms.AutoAugmentPolicy.IMAGENET,
                     interpolation=transforms.InterpolationMode.BILINEAR,
@@ -184,9 +182,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
                     policy=transforms.AutoAugmentPolicy.CIFAR10,
                     interpolation=transforms.InterpolationMode.BILINEAR,
                 ),
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
@@ -212,9 +208,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
                 transforms.RandAugment(
                     interpolation=transforms.InterpolationMode.BILINEAR,
                 ),
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
@@ -240,9 +234,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
                 transforms.RandAugment(
                     interpolation=transforms.InterpolationMode.BILINEAR,
                 ),
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
@@ -267,9 +259,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
                 transforms.TrivialAugmentWide(
                     interpolation=transforms.InterpolationMode.BILINEAR,
                 ),
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
@@ -294,9 +284,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
                 transforms.TrivialAugmentWide(
                     interpolation=transforms.InterpolationMode.BILINEAR,
                 ),
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=torch.tensor(mean), std=torch.tensor(std)),
@@ -317,9 +305,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
     elif transform_type == "randomerasing-imagenet":
         train_transform = transforms.Compose(
             [
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.08, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.RandomErasing(),
@@ -341,9 +327,7 @@ def get_transform(transform_type="noaug", image_size=32, args=None):
     elif transform_type == "randomerasing-cifar":
         train_transform = transforms.Compose(
             [
-                transforms.RandomResizedCrop(
-                    image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)
-                ),
+                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0), ratio=(3.0 / 4.0, 4.0 / 3.0)),
                 transforms.RandomHorizontalFlip(0.5),
                 transforms.ToTensor(),
                 transforms.RandomErasing(),

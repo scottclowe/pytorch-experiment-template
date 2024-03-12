@@ -82,18 +82,10 @@ def evaluate(
     results["cross-entropy"] = np.mean(xent)
     # Note that these evaluation metrics have all been converted to percentages
     results["accuracy"] = 100.0 * sklearn.metrics.accuracy_score(y_true, y_pred)
-    results["accuracy-balanced"] = 100.0 * sklearn.metrics.balanced_accuracy_score(
-        y_true, y_pred
-    )
-    results["f1-micro"] = 100.0 * sklearn.metrics.f1_score(
-        y_true, y_pred, average="micro"
-    )
-    results["f1-macro"] = 100.0 * sklearn.metrics.f1_score(
-        y_true, y_pred, average="macro"
-    )
-    results["f1-support"] = 100.0 * sklearn.metrics.f1_score(
-        y_true, y_pred, average="weighted"
-    )
+    results["accuracy-balanced"] = 100.0 * sklearn.metrics.balanced_accuracy_score(y_true, y_pred)
+    results["f1-micro"] = 100.0 * sklearn.metrics.f1_score(y_true, y_pred, average="micro")
+    results["f1-macro"] = 100.0 * sklearn.metrics.f1_score(y_true, y_pred, average="macro")
+    results["f1-support"] = 100.0 * sklearn.metrics.f1_score(y_true, y_pred, average="weighted")
     # Could expand to other metrics too
 
     if verbosity >= 1:

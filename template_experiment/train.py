@@ -50,9 +50,7 @@ def setup_slurm_distributed():
     if "WORLD_SIZE" in os.environ:
         pass
     elif "SLURM_NNODES" in os.environ and "SLURM_GPUS_ON_NODE" in os.environ:
-        os.environ["WORLD_SIZE"] = int(os.environ["SLURM_NNODES"]) * int(
-            os.environ["SLURM_GPUS_ON_NODE"]
-        )
+        os.environ["WORLD_SIZE"] = int(os.environ["SLURM_NNODES"]) * int(os.environ["SLURM_GPUS_ON_NODE"])
     elif "SLURM_NPROCS" in os.environ:
         os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"]
     if "RANK" not in os.environ and "SLURM_PROCID" in os.environ:
@@ -87,9 +85,7 @@ def run(config):
         utils.set_rng_seeds_fixed(config.seed)
 
     if config.deterministic:
-        print(
-            "Running in deterministic cuDNN mode. Performance may be slower, but more reproducible."
-        )
+        print("Running in deterministic cuDNN mode. Performance may be slower, but more reproducible.")
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
@@ -114,8 +110,7 @@ def run(config):
         print(
             f"Rank {config.global_rank} of {config.world_size} on {gethostname()}"
             f" (local GPU {config.local_rank} of {torch.cuda.device_count()})."
-            " Communicating with master at"
-            f" {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
+            f" Communicating with master at {os.environ['MASTER_ADDR']}:{os.environ['MASTER_PORT']}"
         )
         torch.distributed.init_process_group(backend="nccl")
     else:
@@ -134,10 +129,7 @@ def run(config):
     print()
     print(config)
     print()
-    print(
-        f"Found {torch.cuda.device_count()} GPUs and"
-        f" {utils.get_num_cpu_available()} CPUs."
-    )
+    print(f"Found {torch.cuda.device_count()} GPUs and {utils.get_num_cpu_available()} CPUs.")
 
     # Check which device to use
     use_cuda = not config.no_cuda and torch.cuda.is_available()
@@ -165,32 +157,23 @@ def run(config):
         # Looks like we're trying to resume from the checkpoint that this job
         # will itself create. Let's assume this is to let the job resume upon
         # preemption, and it just hasn't been preempted yet.
-        print(
-            "Skipping premature resumption from preemption: no checkpoint file"
-            f" found at '{config.checkpoint_path}'"
-        )
+        print(f"Skipping premature resumption from preemption: no checkpoint file found at '{config.checkpoint_path}'")
     else:
         print(f"Loading resumption checkpoint '{config.checkpoint_path}'")
         # Map model parameters to be load to the specified gpu.
         checkpoint = torch.load(config.checkpoint_path, map_location=device)
         keys = vars(get_parser().parse_args("")).keys()
-        keys = set(keys).difference(
-            ["resume", "gpu", "global_rank", "local_rank", "cpu_workers"]
-        )
+        keys = set(keys).difference(["resume", "gpu", "global_rank", "local_rank", "cpu_workers"])
         for key in keys:
             if getattr(checkpoint["config"], key, None) is None:
                 continue
             if getattr(config, key) is None:
-                print(
-                    f"  Restoring config value for {key} from checkpoint:",
-                    getattr(checkpoint["config"], key),
-                )
+                print(f"  Restoring config value for {key} from checkpoint: {getattr(checkpoint['config'], key)}")
                 setattr(config, key, getattr(checkpoint["config"], key, None))
             elif getattr(config, key) != getattr(checkpoint["config"], key):
                 print(
                     f"  Warning: config value for {key} differs from checkpoint:"
-                    f" {getattr(config, key)} (ours) vs"
-                    f" {getattr(checkpoint['config'], key)} (checkpoint)"
+                    f" {getattr(config, key)} (ours) vs {getattr(checkpoint['config'], key)} (checkpoint)"
                 )
 
     if config.start_epoch is not None:
@@ -213,26 +196,20 @@ def run(config):
     # Build our Encoder.
     # We have to build the encoder before we load the dataset because it will
     # inform us about what size images we should produce in the preprocessing pipeline.
-    n_class, raw_img_size, img_channels = datasets.image_dataset_sizes(
-        config.dataset_name
-    )
+    n_class, raw_img_size, img_channels = datasets.image_dataset_sizes(config.dataset_name)
     if img_channels > 3 and config.freeze_encoder:
         raise ValueError(
-            "Using a dataset with more than 3 image channels will require retraining"
-            " the encoder, but a frozen encoder was requested."
+            "Using a dataset with more than 3 image channels will require retraining the encoder"
+            ", but a frozen encoder was requested."
         )
     if config.arch_framework == "timm":
-        encoder, encoder_config = encoders.get_timm_encoder(
-            config.model, config.pretrained, in_chans=img_channels
-        )
+        encoder, encoder_config = encoders.get_timm_encoder(config.model, config.pretrained, in_chans=img_channels)
     elif config.arch_framework == "torchvision":
         # It's trickier to implement this for torchvision models, because they
         # don't have the same naming conventions for model names as in timm;
         # need us to specify the name of the weights when loading a pretrained
         # model; and don't support changing the number of input channels.
-        raise NotImplementedError(
-            f"Unsupported architecture framework: {config.arch_framework}"
-        )
+        raise NotImplementedError(f"Unsupported architecture framework: {config.arch_framework}")
     else:
         raise ValueError(f"Unknown architecture framework: {config.arch_framework}")
 
@@ -246,9 +223,7 @@ def run(config):
     if config.image_size is None:
         if "input_size" in encoder_config:
             config.image_size = encoder_config["input_size"][-1]
-            print(
-                f"Setting model input image size to encoder's expected input size: {config.image_size}"
-            )
+            print(f"Setting model input image size to encoder's expected input size: {config.image_size}")
         else:
             config.image_size = 224
             print(f"Setting model input image size to default: {config.image_size}")
@@ -260,11 +235,7 @@ def run(config):
                     UserWarning,
                     stacklevel=2,
                 )
-    elif (
-        "input_size" in encoder_config
-        and config.pretrained
-        and encoder_config["input_size"][-1] != config.image_size
-    ):
+    elif "input_size" in encoder_config and config.pretrained and encoder_config["input_size"][-1] != config.image_size:
         warnings.warn(
             f"A different image size {config.image_size} than what the model was"
             f" pretrained with {encoder_config['input_size'][-1]} was suplied",
@@ -429,9 +400,7 @@ def run(config):
     )
 
     # Fetch the constructor of the appropriate optimizer from torch.optim
-    optimizer = getattr(torch.optim, config.optimizer)(
-        params, lr=config.lr, weight_decay=config.weight_decay
-    )
+    optimizer = getattr(torch.optim, config.optimizer)(params, lr=config.lr, weight_decay=config.weight_decay)
 
     # Scheduler ---------------------------------------------------------------
     # Set up the learning rate scheduler
@@ -503,13 +472,9 @@ def run(config):
             config.dataset_name,
             f"{config.run_name}__{config.run_id}",
         )
-        config.checkpoint_path = os.path.join(
-            config.model_output_dir, "checkpoint_latest.pt"
-        )
+        config.checkpoint_path = os.path.join(config.model_output_dir, "checkpoint_latest.pt")
         if config.log_wandb and config.global_rank == 0:
-            wandb.config.update(
-                {"checkpoint_path": config.checkpoint_path}, allow_val_change=True
-            )
+            wandb.config.update({"checkpoint_path": config.checkpoint_path}, allow_val_change=True)
 
     if config.checkpoint_path is None:
         print("Model will not be saved.")
@@ -578,20 +543,12 @@ def run(config):
             # reproducible if it is rerun with the same number of GPUs (and the same
             # number of CPU workers for the dataloader).
             utils.set_rng_seeds_fixed(epoch_seed + config.global_rank, all_gpu=False)
-            if isinstance(
-                getattr(dataloader_train, "generator", None), torch.Generator
-            ):
-                # Finesse the dataloader's RNG state, if it is not using the
-                # global state.
+            if isinstance(getattr(dataloader_train, "generator", None), torch.Generator):
+                # Finesse the dataloader's RNG state, if it is not using the global state.
                 dataloader_train.generator.manual_seed(epoch_seed + config.global_rank)
-            if isinstance(
-                getattr(dataloader_train.sampler, "generator", None), torch.Generator
-            ):
-                # Finesse the sampler's RNG state, if it is not using the
-                # global RNG state.
-                dataloader_train.sampler.generator.manual_seed(
-                    config.seed + epoch + 10000 * config.global_rank
-                )
+            if isinstance(getattr(dataloader_train.sampler, "generator", None), torch.Generator):
+                # Finesse the sampler's RNG state, if it is not using the global RNG state.
+                dataloader_train.sampler.generator.manual_seed(config.seed + epoch + 10000 * config.global_rank)
 
         if hasattr(dataloader_train.sampler, "set_epoch"):
             # Handling for DistributedSampler.
@@ -662,9 +619,7 @@ def run(config):
 
         # Save model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         t_start_save = time.time()
-        if config.model_output_dir and (
-            not config.distributed or config.global_rank == 0
-        ):
+        if config.model_output_dir and (not config.distributed or config.global_rank == 0):
             print(f"\nSaving model to {config.checkpoint_path}")
             # Save to a temporary file first, then move the temporary file to the target
             # destination. This is to prevent clobbering the checkpoint with a partially
@@ -748,9 +703,7 @@ def run(config):
     )
     # Send stats to wandb
     if config.log_wandb and config.global_rank == 0:
-        wandb.log(
-            {**{f"Eval/Test/{k}": v for k, v in eval_stats.items()}}, step=total_step
-        )
+        wandb.log({**{f"Eval/Test/{k}": v for k, v in eval_stats.items()}}, step=total_step)
 
     if distinct_val_test:
         # Evaluate on validation set
@@ -771,10 +724,7 @@ def run(config):
 
     # Create a copy of the train partition with evaluation transforms
     # and a dataloader using the evaluation configuration (don't drop last)
-    print(
-        "\nEvaluating final model on train set under test conditions"
-        " (no augmentation, dropout, etc)..."
-    )
+    print("\nEvaluating final model on train set under test conditions (no augmentation, dropout, etc)...")
     dataset_train_eval = datasets.fetch_dataset(
         **dataset_args,
         transform_train=transform_eval,
@@ -789,9 +739,7 @@ def run(config):
             drop_last=False,
         )
         dl_train_eval_kwargs["shuffle"] = None
-    dataloader_train_eval = torch.utils.data.DataLoader(
-        dataset_train_eval, **dl_train_eval_kwargs
-    )
+    dataloader_train_eval = torch.utils.data.DataLoader(dataset_train_eval, **dl_train_eval_kwargs)
     eval_stats = evaluate(
         dataloader=dataloader_train_eval,
         model=model,
@@ -801,9 +749,7 @@ def run(config):
     )
     # Send stats to wandb
     if config.log_wandb and config.global_rank == 0:
-        wandb.log(
-            {**{f"Eval/Train/{k}": v for k, v in eval_stats.items()}}, step=total_step
-        )
+        wandb.log({**{f"Eval/Train/{k}": v for k, v in eval_stats.items()}}, step=total_step)
 
 
 def train_one_epoch(
@@ -960,11 +906,7 @@ def train_one_epoch(
         # Log sample training images to show on wandb
         if config.log_wandb and batch_idx <= 1:
             # Log 8 example training images from each GPU
-            img_indices = [
-                offset + relative
-                for offset in [0, batch_size_this_gpu // 2]
-                for relative in [0, 1, 2, 3]
-            ]
+            img_indices = [offset + relative for offset in [0, batch_size_this_gpu // 2] for relative in [0, 1, 2, 3]]
             img_indices = sorted(set(img_indices))
             log_images = stimuli[img_indices]
             if config.distributed:
@@ -977,14 +919,9 @@ def train_one_epoch(
                 )
 
         # Log to console
-        if (
-            batch_idx <= 2
-            or batch_idx % config.print_interval == 0
-            or batch_idx == len(dataloader) - 1
-        ):
+        if batch_idx <= 2 or batch_idx % config.print_interval == 0 or batch_idx == len(dataloader) - 1:
             print(
-                f"Train Epoch: {epoch:3d}"
-                + (f"/{n_epoch}" if n_epoch is not None else ""),
+                f"Train Epoch: {epoch:3d}" + (f"/{n_epoch}" if n_epoch is not None else ""),
                 "  Step:{:4d}/{}".format(batch_idx + 1, len(dataloader)),
                 "  Loss:{:8.5f}".format(loss_batch),
                 "  Acc:{:6.2f}%".format(acc),
@@ -992,11 +929,7 @@ def train_one_epoch(
             )
 
         # Log to wandb
-        if (
-            config.log_wandb
-            and config.global_rank == 0
-            and batch_idx % config.log_interval == 0
-        ):
+        if config.log_wandb and config.global_rank == 0 and batch_idx % config.log_interval == 0:
             # Create a log dictionary to send to wandb
             # Epoch progress interpolates smoothly between epochs
             epoch_progress = epoch - 1 + (batch_idx + 1) / len(dataloader)

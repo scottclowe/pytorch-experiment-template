@@ -27,8 +27,7 @@ def get_timm_encoder(model_name, pretrained=False, in_chans=3):
     """
     if len(timm.list_models(model_name)) == 0:
         warnings.warn(
-            f"Unrecognized model '{model_name}'. Trying to fetch it from the"
-            " hugging-face hub.",
+            f"Unrecognized model '{model_name}'. Trying to fetch it from the hugging-face hub.",
             UserWarning,
             stacklevel=2,
         )
@@ -36,9 +35,7 @@ def get_timm_encoder(model_name, pretrained=False, in_chans=3):
 
     # We request the model without the classification head (num_classes=0)
     # to get it is an encoder-only model
-    encoder = timm.create_model(
-        model_name, pretrained=pretrained, num_classes=0, in_chans=in_chans
-    )
+    encoder = timm.create_model(model_name, pretrained=pretrained, num_classes=0, in_chans=in_chans)
     encoder_config = resolve_data_config({}, model=encoder)
 
     # Send a dummy input through the encoder to find out the shape of its output
