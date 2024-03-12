@@ -18,7 +18,6 @@ from torch.utils.data.distributed import DistributedSampler
 from template_experiment import data_transformations, datasets, encoders, utils
 from template_experiment.evaluation import evaluate
 
-LATEST_CKPT_NAME = "checkpoint_latest.pt"
 BASE_BATCH_SIZE = 128
 
 
@@ -159,31 +158,24 @@ def run(config):
 
     # RESTORE OMITTED CONFIG FROM RESUMPTION CHECKPOINT =======================
     checkpoint = None
-    if not config.resume:
+    config.model_output_dir = None
+    if config.checkpoint_path:
+        config.model_output_dir = os.path.dirname(config.checkpoint_path)
+    if not config.checkpoint_path:
         # Not trying to resume from a checkpoint
         pass
-    elif not os.path.isfile(config.resume):
-        # Resuming was specified, but the checkpoint doesn't appear to exist
-        if config.model_output_dir and config.resume == os.path.join(
-            config.model_output_dir, LATEST_CKPT_NAME
-        ):
-            # Looks like we're trying to resume from the checkpoint that this job
-            # will itself create! Let's assume this is to let the job resume upon
-            # preemption, and it just hasn't been preempted yet.
-            print(
-                "Skipping premature resumption from preemption: no checkpoint file"
-                f" found at '{config.resume}'"
-            )
-        else:
-            # Looks like we're not trying to resume upon preemption, so this
-            # really is an error.
-            raise EnvironmentError(
-                f"Specified resume checkpoint file does not exist: '{config.resume}'"
-            )
+    elif not os.path.isfile(config.checkpoint_path):
+        # Looks like we're trying to resume from the checkpoint that this job
+        # will itself create. Let's assume this is to let the job resume upon
+        # preemption, and it just hasn't been preempted yet.
+        print(
+            "Skipping premature resumption from preemption: no checkpoint file"
+            f" found at '{config.checkpoint_path}'"
+        )
     else:
-        print(f"Loading resumption checkpoint '{config.resume}'")
+        print(f"Loading resumption checkpoint '{config.checkpoint_path}'")
         # Map model parameters to be load to the specified gpu.
-        checkpoint = torch.load(config.resume, map_location=device)
+        checkpoint = torch.load(config.checkpoint_path, map_location=device)
         keys = vars(get_parser().parse_args("")).keys()
         keys = set(keys).difference(
             ["resume", "gpu", "global_rank", "local_rank", "cpu_workers"]
@@ -489,6 +481,7 @@ def run(config):
                 "local_rank",
                 "run_name",
                 "run_id",
+                "model_output_dir",
             ],
         )
         # If a run_id was not supplied at the command prompt, wandb will
@@ -504,29 +497,27 @@ def run(config):
     if config.run_id is None:
         config.run_id = utils.generate_id()
 
-    # If an explicit model output directory was given, we will use that.
-    # Otherwise, if there is a models_dir specified, we will create an output
-    # directory for this model.
-    # If both config.model_output_dir and config.models_dir are empty, no
-    # output will be saved.
-    if not config.model_output_dir and config.models_dir:
+    # If no checkpoint path was supplied, but models_dir was, we will automatically
+    # determine the path to which we will save the model checkpoint.
+    # If both are empty, we won't save the model.
+    if not config.checkpoint_path and config.models_dir:
         config.model_output_dir = os.path.join(
             config.models_dir,
             config.dataset_name,
             f"{config.run_name}__{config.run_id}",
         )
-
-    if config.log_wandb and config.global_rank == 0:
-        wandb.config.update(
-            {"model_output_dir": config.model_output_dir}, allow_val_change=True
+        config.checkpoint_path = os.path.join(
+            config.model_output_dir, "checkpoint_latest.pt"
         )
+        if config.log_wandb and config.global_rank == 0:
+            wandb.config.update(
+                {"checkpoint_path": config.checkpoint_path}, allow_val_change=True
+            )
 
-    if config.model_output_dir:
-        os.makedirs(config.model_output_dir, exist_ok=True)
-        ckpt_path_latest = os.path.join(config.model_output_dir, LATEST_CKPT_NAME)
-        print(f"Model will be saved to '{ckpt_path_latest}'")
+    if config.checkpoint_path is None:
+        print("Model will not be saved.")
     else:
-        ckpt_path_latest = None
+        print(f"Model will be saved to '{config.checkpoint_path}'")
 
     # RESUME ==================================================================
     # Now that everything is set up, we can load the state of the model,
@@ -677,13 +668,13 @@ def run(config):
         if config.model_output_dir and (
             not config.distributed or config.global_rank == 0
         ):
-            print(f"\nSaving model to {ckpt_path_latest}")
+            print(f"\nSaving model to {config.checkpoint_path}")
             # Save to a temporary file first, then move the temporary file to the target
             # destination. This is to prevent clobbering the checkpoint with a partially
             # saved file, in the event that the saving process is interrupted. Saving
             # the checkpoint takes a little while and can be disrupted by preemption,
             # whereas moving the file is an atomic operation.
-            tmp_a, tmp_b = os.path.split(ckpt_path_latest)
+            tmp_a, tmp_b = os.path.split(config.checkpoint_path)
             tmp_fname = os.path.join(tmp_a, ".tmp." + tmp_b)
             torch.save(
                 {
@@ -701,13 +692,13 @@ def run(config):
                 },
                 tmp_fname,
             )
-            os.rename(tmp_fname, ckpt_path_latest)
-            print(f"Saved model to  {ckpt_path_latest}")
+            os.rename(tmp_fname, config.checkpoint_path)
+            print(f"Saved model to  {config.checkpoint_path}")
 
             if config.save_best_model and best_stats["best_epoch"] == epoch:
                 ckpt_path_best = os.path.join(config.model_output_dir, "best_model.pt")
                 print(f"Copying model to {ckpt_path_best}")
-                shutil.copyfile(ckpt_path_latest, ckpt_path_best)
+                shutil.copyfile(config.checkpoint_path, ckpt_path_best)
 
         t_end_save = time.time()
         timing_stats["saving"] = t_end_save - t_start_save
@@ -1238,15 +1229,6 @@ def get_parser():
         default=0.0,
         help="Amount of label smoothing. Default: %(default)s",
     )
-    # Input checkpoint args ---------------------------------------------------
-    group = parser.add_argument_group("Input checkpoint")
-    group.add_argument(
-        "--resume",
-        default="",
-        type=str,
-        metavar="PATH",
-        help="Resume full model and optimizer state from job checkpoint.",
-    )
     # Output checkpoint args --------------------------------------------------
     group = parser.add_argument_group("Output checkpoint")
     group.add_argument(
@@ -1254,13 +1236,18 @@ def get_parser():
         type=str,
         default="models",
         metavar="PATH",
-        help="Output directory for all models. Ignored if --models-output-dir is set. Default: %(default)s",
+        help="Output directory for all models. Ignored if --checkpoint is set. Default: %(default)s",
     )
     group.add_argument(
-        "--model-output-dir",
+        "--checkpoint",
+        dest="checkpoint_path",
+        default="",
         type=str,
         metavar="PATH",
-        help="Output directory for this specific model. Overrides --models-dir.",
+        help=(
+            "Save and resume partially trained model and optimizer state from this checkpoint."
+            " Overrides --models-dir and --models-dir."
+        ),
     )
     group.add_argument(
         "--save-best-model",

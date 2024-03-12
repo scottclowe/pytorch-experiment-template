@@ -117,6 +117,8 @@ echo ""
 # recommended that you keep your intermediary checkpoints under this directory
 CKPT_DIR="/checkpoint/${SLURM_JOB_USER}/${SLURM_JOB_ID}"
 echo "CKPT_DIR = $CKPT_DIR"
+CKPT_PTH="$CKPT_DIR/checkpoint_latest.pt"
+echo "CKPT_PTH = $CKPT_PTH"
 echo ""
 # Ensure the checkpoint dir exists
 mkdir -p "$CKPT_DIR"
@@ -162,13 +164,13 @@ fi
 conda env export > "$CKPT_DIR/environment.yml"
 pip freeze > "$CKPT_DIR/frozen-requirements.txt"
 
-if [[ "$SLURM_RESTART_COUNT" > 0 && ! -f "$CKPT_DIR/checkpoint_latest.pt" ]];
+if [[ "$SLURM_RESTART_COUNT" > 0 && ! -f "$CKPT_PTH" ]];
 then
     echo ""
     echo "====================================================================="
     echo "SLURM SCRIPT ERROR:"
     echo "    Resuming after pre-emption (SLURM_RESTART_COUNT=$SLURM_RESTART_COUNT)"
-    echo "    but there is no checkpoint file at $CKPT_DIR/checkpoint_latest.pt"
+    echo "    but there is no checkpoint file at $CKPT_PTH"
     echo "====================================================================="
     exit 1;
 fi;
@@ -251,8 +253,7 @@ srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
     "$PROJECT_DIRN/train.py" \
     --cpu-workers="$SLURM_CPUS_PER_GPU" \
     --seed="$SEED" \
-    --model-output-dir="$CKPT_DIR" \
-    --resume="$CKPT_DIR/checkpoint_latest.pt" \
+    --checkpoint="$CKPT_PTH" \
     --log-wandb \
     --run-name="$SLURM_JOB_NAME" \
     --run-id="$JOB_ID" \
