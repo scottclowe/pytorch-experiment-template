@@ -312,6 +312,7 @@ def run(config):
         transform_train=transform_train,
         transform_eval=transform_eval,
     )
+    eval_set = "Val" if distinct_val_test else "Test"
 
     # Dataloader --------------------------------------------------------------
     dl_train_kwargs = {
@@ -592,7 +593,6 @@ def run(config):
         # Evaluate on validation set
         t_start_val = time.time()
 
-        eval_set = "Val" if distinct_val_test else "Test"
         eval_stats = evaluate(
             dataloader=dataloader_val,
             model=model,
@@ -676,7 +676,10 @@ def run(config):
         # Print with flush=True forces the output buffer to be printed immediately
         print("", flush=True)
 
-    print(f"Training complete! (Trained epochs {start_epoch} to {config.epochs})")
+    if start_epoch > config.epochs:
+        print("Training already completed!")
+    else:
+        print(f"Training complete! (Trained epochs {start_epoch} to {config.epochs})")
     print(
         f"Best {eval_set} accuracy was {best_stats['max_accuracy']:.2f}%,"
         f" seen at the end of epoch {best_stats['best_epoch']}"
