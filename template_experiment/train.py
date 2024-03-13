@@ -200,7 +200,7 @@ def run(config):
             ", but a frozen encoder was requested."
         )
     if config.arch_framework == "timm":
-        encoder, encoder_config = encoders.get_timm_encoder(config.model, config.pretrained, in_chans=img_channels)
+        encoder, encoder_config = encoders.get_timm_encoder(config.arch, config.pretrained, in_chans=img_channels)
     elif config.arch_framework == "torchvision":
         # It's trickier to implement this for torchvision models, because they
         # don't have the same naming conventions for model names as in timm;
@@ -1057,7 +1057,9 @@ def get_parser():
     group.add_argument(
         "--model",
         "--encoder",
-        dest="model",
+        "--arch",
+        "--architecture",
+        dest="arch",
         type=str,
         default="resnet18",
         help="Name of model architecture. Default: %(default)s",
