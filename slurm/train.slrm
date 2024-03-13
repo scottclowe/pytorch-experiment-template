@@ -7,7 +7,7 @@
 #SBATCH --mem-per-gpu=10G           # RAM per GPU. Soft maximum of 20G per GPU requested on t4v2, 41G otherwise. Hard maximum of 167G per node.
 #SBATCH --time=08:00:00             # You must specify a maximum run-time if you want to run for more than 2h
 #SBATCH --signal=B:USR1@120         # Send signal SIGUSR1 120 seconds before the job hits the time limit
-#SBATCH --output=slogs/%x__%A_%a__%n.out
+#SBATCH --output=slogs/%x__%A_%a.out
                                     # %x=job-name, %A=job ID, %a=array value, %n=node rank, %t=task rank, %N=hostname
                                     # Note: You must create output directory "slogs" before launching job, otherwise it will immediately
                                     # fail without an error message.
