@@ -89,7 +89,7 @@ setup(
     package_dir={meta["name"]: os.path.join(".", meta["path"])},
     # If any package contains *.txt or *.rst files, include them:
     # package_data={"": ["*.txt", "*.rst"],}
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=install_requires,
     extras_require=extras_require,
     # Metadata to display on PyPI
@@ -107,11 +107,11 @@ setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     entry_points={
