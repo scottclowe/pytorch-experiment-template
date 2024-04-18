@@ -608,6 +608,19 @@ def run(config):
             best_stats["max_accuracy"] = eval_stats["accuracy"]
             best_stats["best_epoch"] = epoch
 
+        print(f"Evaluating epoch {epoch}/{config.epochs} summary:")
+        if timing_stats["val"] > 172800:
+            print(f"  Duration ...........{timing_stats['val']/86400:11.2f} days")
+        elif timing_stats["val"] > 5400:
+            print(f"  Duration ...........{timing_stats['val']/3600:11.2f} hours")
+        elif timing_stats["val"] > 120:
+            print(f"  Duration ...........{timing_stats['val']/60:11.2f} minutes")
+        else:
+            print(f"  Duration ...........{timing_stats['val']:11.2f} seconds")
+        print(f"  Throughput .........{eval_stats['throughput']:11.2f} samples/sec")
+        print(f"  Loss ...............{eval_stats['loss']:14.5f}")
+        print(f"  Accuracy ...........{eval_stats['accuracy']:11.2f} %")
+
         # Save model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         t_start_save = time.time()
         if config.model_output_dir and (not config.distributed or config.global_rank == 0):
