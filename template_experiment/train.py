@@ -1167,7 +1167,7 @@ def get_parser():
         metavar="PATH",
         help=(
             "Save and resume partially trained model and optimizer state from this checkpoint."
-            " Overrides --models-dir and --models-dir."
+            " Overrides --models-dir."
         ),
     )
     group.add_argument(
