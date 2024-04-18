@@ -915,11 +915,11 @@ def train_one_epoch(
         # Log to console
         if batch_idx <= 2 or batch_idx % config.print_interval == 0 or batch_idx >= len(dataloader) - 1:
             print(
-                f"Train Epoch: {epoch:3d}" + (f"/{n_epoch}" if n_epoch is not None else ""),
-                "  Step:{:4d}/{}".format(batch_idx + 1, len(dataloader)),
-                "  Loss:{:8.5f}".format(loss_batch),
-                "  Acc:{:6.2f}%".format(acc),
-                f"  LR: {scheduler.get_last_lr()}",
+                f"Train Epoch:{epoch:4d}" + (f"/{n_epoch}" if n_epoch is not None else ""),
+                " Step:{:4d}/{}".format(batch_idx + 1, len(dataloader)),
+                " Loss:{:8.5f}".format(loss_batch),
+                " Acc:{:6.2f}%".format(acc),
+                " LR: {}".format(scheduler.get_last_lr()),
             )
 
         # Log to wandb
