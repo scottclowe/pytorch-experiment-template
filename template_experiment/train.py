@@ -940,9 +940,16 @@ def train_one_epoch(
             }
             # Track the learning rate of each parameter group
             for lr_idx in range(len(optimizer.param_groups)):
-                grp_name = optimizer.param_groups[lr_idx]["name"]
+                if "name" in optimizer.param_groups[lr_idx]:
+                    grp_name = optimizer.param_groups[lr_idx]["name"]
+                elif len(optimizer.param_groups) == 1:
+                    grp_name = ""
+                else:
+                    grp_name = f"grp{lr_idx}"
+                if grp_name != "":
+                    grp_name = f"-{grp_name}"
                 grp_lr = optimizer.param_groups[lr_idx]["lr"]
-                log_dict[f"Training/stepwise/lr-{grp_name}"] = grp_lr
+                log_dict[f"Training/stepwise/lr{grp_name}"] = grp_lr
             # Synchronize ensures everything has finished running on each GPU
             torch.cuda.synchronize()
             # Record how long it took to do each step in the pipeline
