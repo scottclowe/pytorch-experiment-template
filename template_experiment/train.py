@@ -913,7 +913,7 @@ def train_one_epoch(
                 )
 
         # Log to console
-        if batch_idx <= 2 or batch_idx % config.print_interval == 0 or batch_idx == len(dataloader) - 1:
+        if batch_idx <= 2 or batch_idx % config.print_interval == 0 or batch_idx >= len(dataloader) - 1:
             print(
                 f"Train Epoch: {epoch:3d}" + (f"/{n_epoch}" if n_epoch is not None else ""),
                 "  Step:{:4d}/{}".format(batch_idx + 1, len(dataloader)),
