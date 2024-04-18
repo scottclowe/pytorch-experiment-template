@@ -17,6 +17,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 from template_experiment import data_transformations, datasets, encoders, utils
 from template_experiment.evaluation import evaluate
+from template_experiment.io import safe_save_model
 
 BASE_BATCH_SIZE = 128
 
@@ -611,33 +612,22 @@ def run(config):
         # Save model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         t_start_save = time.time()
         if config.model_output_dir and (not config.distributed or config.global_rank == 0):
-            print(f"\nSaving model to {config.checkpoint_path}")
-            # Save to a temporary file first, then move the temporary file to the target
-            # destination. This is to prevent clobbering the checkpoint with a partially
-            # saved file, in the event that the saving process is interrupted. Saving
-            # the checkpoint takes a little while and can be disrupted by preemption,
-            # whereas moving the file is an atomic operation.
-            tmp_a, tmp_b = os.path.split(config.checkpoint_path)
-            tmp_fname = os.path.join(tmp_a, ".tmp." + tmp_b)
-            torch.save(
+            safe_save_model(
                 {
-                    "encoder": encoder.state_dict(),
-                    "classifier": classifier.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "scheduler": scheduler.state_dict(),
-                    "epoch": epoch,
-                    "total_step": total_step,
-                    "n_samples_seen": n_samples_seen,
-                    "config": config,
-                    "encoder_config": encoder_config,
-                    "transform_args": transform_args,
-                    **best_stats,
+                    "encoder": encoder,
+                    "classifier": classifier,
+                    "optimizer": optimizer,
+                    "scheduler": scheduler,
                 },
-                tmp_fname,
+                config.checkpoint_path,
+                config=config,
+                epoch=epoch,
+                total_step=total_step,
+                n_samples_seen=n_samples_seen,
+                encoder_config=encoder_config,
+                transform_args=transform_args,
+                **best_stats,
             )
-            os.rename(tmp_fname, config.checkpoint_path)
-            print(f"Saved model to  {config.checkpoint_path}")
-
             if config.save_best_model and best_stats["best_epoch"] == epoch:
                 ckpt_path_best = os.path.join(config.model_output_dir, "best_model.pt")
                 print(f"Copying model to {ckpt_path_best}")
