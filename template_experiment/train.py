@@ -417,8 +417,7 @@ def run(config):
     # LOGGING =================================================================
     # Setup logging and saving
 
-    # If we're using wandb, initialize the run, or resume it if the job
-    # was preempted.
+    # If we're using wandb, initialize the run, or resume it if the job was preempted.
     if config.log_wandb and config.global_rank == 0:
         wandb_run_name = config.run_name
         if wandb_run_name is not None and config.run_id is not None:
