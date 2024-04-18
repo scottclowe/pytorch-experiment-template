@@ -50,7 +50,7 @@ def setup_slurm_distributed():
     if "WORLD_SIZE" in os.environ:
         pass
     elif "SLURM_NNODES" in os.environ and "SLURM_GPUS_ON_NODE" in os.environ:
-        os.environ["WORLD_SIZE"] = int(os.environ["SLURM_NNODES"]) * int(os.environ["SLURM_GPUS_ON_NODE"])
+        os.environ["WORLD_SIZE"] = str(int(os.environ["SLURM_NNODES"]) * int(os.environ["SLURM_GPUS_ON_NODE"]))
     elif "SLURM_NPROCS" in os.environ:
         os.environ["WORLD_SIZE"] = os.environ["SLURM_NTASKS"]
     if "RANK" not in os.environ and "SLURM_PROCID" in os.environ:
@@ -65,7 +65,7 @@ def setup_slurm_distributed():
     if "MASTER_ADDR" not in os.environ and "SLURM_NODELIST" in os.environ:
         os.environ["MASTER_ADDR"] = os.environ["SLURM_NODELIST"].split("-")[0]
     if "MASTER_PORT" not in os.environ and "SLURM_JOB_ID" in os.environ:
-        os.environ["MASTER_PORT"] = 49152 + (int(os.environ["SLURM_JOB_ID"]) % 16384)
+        os.environ["MASTER_PORT"] = str(49152 + int(os.environ["SLURM_JOB_ID"]) % 16384)
 
 
 def run(config):
