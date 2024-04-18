@@ -202,7 +202,14 @@ echo "Rank 0 node is at $MASTER_ADDR"
 # collisions between jobs when they are scheduled on the same node.
 # We only use ports in the range 49152-65535 (inclusive), which are the
 # Dynamic Ports, also known as Private Ports.
-export MASTER_PORT="$(( $SLURM_JOB_ID % 16384 + 49152 ))"
+MASTER_PORT="$(( $SLURM_JOB_ID % 16384 + 49152 ))"
+if ss -tulpn | grep -q ":$MASTER_PORT ";
+then
+    # The port we selected is in use, so we'll get a random available port instead.
+    echo "Finding a free port to use for $SLURM_NNODES node training"
+    MASTER_PORT="$(python -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1])')";
+fi
+export MASTER_PORT;
 echo "Will use port $MASTER_PORT for c10d communication"
 
 export WORLD_SIZE="$(($SLURM_NNODES * $SLURM_GPUS_ON_NODE))"
