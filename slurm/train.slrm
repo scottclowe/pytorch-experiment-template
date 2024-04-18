@@ -84,6 +84,19 @@ then
 fi
 echo "SEED = $SEED"
 
+# Check if the first argument is a path to the python script to run
+if [[ "$1" == *.py ]];
+then
+    # If it is, we'll run this python script and remove it from the list of
+    # arguments to pass on to the script.
+    SCRIPT_PATH="$1"
+    shift
+else
+    # Otherwise, use our default python training script.
+    SCRIPT_PATH="$PROJECT_DIRN/train.py"
+fi
+echo "SCRIPT_PATH = $SCRIPT_PATH"
+
 # Any arguments provided to sbatch after the name of the slurm script will be
 # passed through to the main script later.
 # (The pass-through works like *args or **kwargs in python.)
@@ -266,7 +279,7 @@ srun -N "$SLURM_NNODES" --ntasks-per-node=1 \
     --rdzv_id="$SLURM_JOB_ID" \
     --rdzv_backend=c10d \
     --rdzv_endpoint="$MASTER_ADDR:$MASTER_PORT" \
-    "$PROJECT_DIRN/train.py" \
+    "$SCRIPT_PATH" \
     --cpu-workers="$SLURM_CPUS_PER_GPU" \
     --seed="$SEED" \
     --checkpoint="$CKPT_PTH" \
