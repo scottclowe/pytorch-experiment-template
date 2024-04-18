@@ -134,11 +134,6 @@ echo "CKPT_PTH = $CKPT_PTH"
 echo ""
 # Ensure the checkpoint dir exists
 mkdir -p "$CKPT_DIR"
-# In the future, the checkpoint directory will be removed immediately after the
-# job has finished. If you would like the file to stay longer, and create an
-# empty "delay purge" file as a flag so the system will delay the removal for
-# 48 hours
-touch "$CKPT_DIR/DELAYPURGE"
 echo "Current contents of ${CKPT_DIR}:"
 ls -lh "${CKPT_DIR}"
 echo ""
