@@ -38,6 +38,8 @@ def safe_save_model(modules, checkpoint_path=None, config=None, **kwargs):
     else:
         raise ValueError("No checkpoint path provided")
     print(f"\nSaving model to {checkpoint_path}")
+    # Create the directory if it doesn't already exist
+    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
     # Save to a temporary file first, then move the temporary file to the target
     # destination. This is to prevent clobbering the checkpoint with a partially
     # saved file, in the event that the saving process is interrupted. Saving
