@@ -322,13 +322,17 @@ Set-up
    the environment name).
 
 #. With the project's conda environment activated, install the package and its
-   training dependencies::
+   training dependencies:
+
+   .. code-block:: bash
 
         pip install --editable .[train]
 
    This step will typically take 5-10 minutes to run.
 
-#. Check the installation by running the help command::
+#. Check the installation by running the help command:
+
+   .. code-block:: bash
 
         python template_experiment/train.py -h
 
@@ -338,7 +342,9 @@ Set-up
 Example commands
 ~~~~~~~~~~~~~~~~
 
-- To run the default training command locally::
+- To run the default training command locally:
+
+  .. code-block:: bash
 
         python template_experiment/train.py
 
@@ -349,7 +355,9 @@ Example commands
 - Run the default training command with on the cluster with SLURM.
   First, ssh into the cluster and cd to the project repository.
   You don't need to activate the project's conda environment.
-  Then use sbatch to add your SLURM job to the queue::
+  Then use sbatch to add your SLURM job to the queue:
+
+  .. code-block:: bash
 
         sbatch slurm/train.slrm
 
@@ -357,7 +365,9 @@ Example commands
   SLURM script.
   Arguments set on the command prompt like this will override the arguments in
   ``slurm/train.slrm``.
-  This is useful for customizing the job name, for example::
+  This is useful for customizing the job name, for example:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18 slurm/train.slrm
 
@@ -370,31 +380,43 @@ Example commands
 
 - Any arguments you include after ``slurm/train.slrm`` will be passed through to train.py.
 
-  For example, you can specify to use a pretrained model::
+  For example, you can specify to use a pretrained model:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18-pt slurm/train.slrm --dataset=cifar10 --pretrained
 
-  change the architecture and dataset::
+  change the architecture and dataset:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf100_vit-pt \
             slurm/train.slrm --dataset=cifar100 --model=vit_small_patch16_224 --pretrained
 
-  or change the learning rate of the encoder::
+  or change the learning rate of the encoder:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18-pt_enc-lr-0.01 \
             slurm/train.slrm --dataset=cifar10 --pretrained --lr-encoder-mult=0.01
 
 - You can trivially scale up the job to run across multiple GPUs, either by
   changing the gres argument to use more of the GPUs on the node (up to 8 GPUs
-  per node on the t4v2 partition, 4 GPUs per node otherwise)::
+  per node on the t4v2 partition, 4 GPUs per node otherwise):
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18-pt_4gpu --gres=gpu:4 slurm/train.slrm --pretrained
 
-  or increasing the number of nodes being requested::
+  or increasing the number of nodes being requested:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18-pt_2x1gpu --nodes=2 slurm/train.slrm --pretrained
 
-  or both::
+  or both:
+
+  .. code-block:: bash
 
         sbatch --job-name=exp_cf10_rn18-pt_2x4gpu --nodes=2 --gres=gpu:4 slurm/train.slrm --pretrained
 
@@ -414,21 +436,27 @@ server on one of the interactive compute nodes.
 This uses the methodology of https://support.vectorinstitute.ai/jupyter_notebook
 
 You'll need to install jupyter into your conda environment to launch the notebook.
-After activating the environment for this project, run::
+After activating the environment for this project, run:
+
+.. code-block:: bash
 
     pip install -r requirements-notebook.txt
 
 To launch a notebook server and connect to it on your local machine, perform
 the following steps.
 
-#. Run the notebook SLURM script to launch the jupyter notebook::
+#. Run the notebook SLURM script to launch the jupyter notebook:
+
+   .. code-block:: bash
 
         sbatch slurm/notebook.slrm
 
    The job will launch on one of the interactive nodes, and will acquire a
    random port on that node to serve the notebook on.
 
-#. Wait for the job to start running. You can monitor it with::
+#. Wait for the job to start running. You can monitor it with:
+
+   .. code-block:: bash
 
         squeue --me
 
@@ -442,11 +470,15 @@ the following steps.
 
    Here we can see our JOBID is 10618891, and it is running on node gpu026.
 
-#. Inspect the output of the job with::
+#. Inspect the output of the job with:
+
+   .. code-block:: bash
 
         cat jnb_JOBID.out
 
-   e.g.::
+   e.g.:
+
+   .. code-block:: bash
 
         cat jnb_10618891.out
 
@@ -467,7 +499,9 @@ the following steps.
    to log in to the notebook.
 
 #. On your local machine, use ssh to forward the port from the compute node to
-   your local machine::
+   your local machine:
+
+   .. code-block:: bash
 
         ssh USERNAME@v.vectorinstitute.ai -N -L 8887:gpu026:47201
 
@@ -478,7 +512,9 @@ the following steps.
    port 8887.
 
 #. Open a browser on your local machine and navigate to http://localhost:8887
-   (or whatever port you chose in the previous step)::
+   (or whatever port you chose in the previous step):
+
+   .. code-block:: bash
 
         sensible-browser http://localhost:8887
 
@@ -489,11 +525,15 @@ the following steps.
    machine.
 
 #. Once you are done working in your notebooks (and have saved your changes),
-   make sure to end the job running the notebook with::
+   make sure to end the job running the notebook with:
+
+   .. code-block:: bash
 
         scancel JOBID
 
-   e.g.::
+   e.g.:
+
+   .. code-block:: bash
 
         scancel 10618891
 
@@ -600,15 +640,21 @@ sbatch command.
 Our default job array in ``slurm/train.slrm`` is ``--array=0``, so only one job
 will be launched, and that job will use the default seed of ``0``.
 
-To launch the same job 5 times, each with a different seed (1, 2, 3, 4, and 5)::
+To launch the same job 5 times, each with a different seed (1, 2, 3, 4, and 5):
+
+.. code-block:: bash
 
     sbatch --array=1-5 slurm/train.slrm
 
-or to use seeds 42 and 888::
+or to use seeds 42 and 888:
+
+.. code-block:: bash
 
     sbatch --array=42,888 slurm/train.slrm
 
-or to use a randomly selected seed::
+or to use a randomly selected seed:
+
+.. code-block:: bash
 
     sbatch --array="$RANDOM" slurm/train.slrm
 
@@ -724,11 +770,15 @@ to manually fix these yourself before staging the corrected version.
 
 After installing it, the pre-commit stack will run every time you try to make
 a commit to this repository on that machine.
-You can also manually run the pre-commit stack on all the files at any time::
+You can also manually run the pre-commit stack on all the files at any time:
+
+.. code-block:: bash
 
     pre-commit run --all-files
 
-To force a commit to go through without passing the pre-commit hooks use the ``--no-verify`` flag::
+To force a commit to go through without passing the pre-commit hooks use the ``--no-verify`` flag:
+
+.. code-block:: bash
 
     git commit --no-verify
 
@@ -764,11 +814,15 @@ instead of stripping them, simply remove the nbstripout_ hook from the
 `.pre-commit-config.yaml file <https://github.com/scottclowe/pytorch-experiment-template/blob/master/.pre-commit-config.yaml#L31-L35>`__
 and commit that change.
 
-If you don't want to use pre-commit at all, you can uninstall it::
+If you don't want to use pre-commit at all, you can uninstall it:
+
+.. code-block:: bash
 
     pre-commit uninstall
 
-and purge it (along with black and flake8) from the repository::
+and purge it (along with black and flake8) from the repository:
+
+.. code-block:: bash
 
     git rm .pre-commit-config.yaml .flake8 .github/workflows/pre-commit.yaml
     git commit -m "DEV: Remove pre-commit hooks"
