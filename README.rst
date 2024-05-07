@@ -34,7 +34,9 @@ When creating a new repository from this template, these are the steps to follow
 
        You can create a new repository on GitHub from this template by clicking the `Use this template <https://github.com/scottclowe/pytorch-experiment-template/generate>`_ button.
 
-       Then clone your new repository to your local system [pseudocode]::
+       Then clone your new repository to your local system [pseudocode]:
+
+       .. code-block:: bash
 
           git clone git@github.com:your_org/your_repo_name.git
           cd your_repo_name
@@ -74,7 +76,9 @@ When creating a new repository from this template, these are the steps to follow
 
     Other fields to enter should be self-explanatory.
 
-#.  Rename the directory ``template_experiment`` to be the ``path`` variable you just added to ``__meta__.py``::
+#.  Rename the directory ``template_experiment`` to be the ``path`` variable you just added to ``__meta__.py``:
+
+    .. code-block:: bash
 
       # Define PROJ_HYPH as your actual project name (use hyphens instead of underscores or spaces)
       PROJ_HYPH=your-actual-project-name-with-hyphens-for-spaces
@@ -87,7 +91,9 @@ When creating a new repository from this template, these are the steps to follow
 #.  Change references to ``template_experiment`` and ``template-experiment``
     to your path variable.
 
-    This can be done with the sed command::
+    This can be done with the sed command:
+
+    .. code-block:: bash
 
         sed -i "s/template_experiment/$PROJ_DIRN/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm
         sed -i "s/template-experiment/$PROJ_HYPH/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm
@@ -129,13 +135,17 @@ When creating a new repository from this template, these are the steps to follow
         PROJECT_NAME="template-experiment"
 
 #.  Swap out the contents of ``README.rst`` with an initial description of your project.
-    If you prefer, you can use markdown (``README.md``) instead of rST::
+    If you prefer, you can use markdown (``README.md``) instead of rST:
+
+    .. code-block:: bash
 
       git rm README.rst
       # touch README.rst
       touch README.md && sed -i "s/.rst/.md/" MANIFEST.in
 
-#.  Add your changes to the repo's initial commit and force-push your changes::
+#.  Add your changes to the repo's initial commit and force-push your changes:
+
+    .. code-block:: bash
 
       git add .
       git commit --amend
@@ -159,7 +169,9 @@ Vector one-time set-up
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Run this code block to install miniconda before you make your first environment
-(you don't need to re-run this every time you start a new project)::
+(you don't need to re-run this every time you start a new project):
+
+.. code-block:: bash
 
     # Login to Vector
     ssh USERNAME@v.vectorinstitute.ai
@@ -201,7 +213,9 @@ Follow this next step if you want to use `Weights and Biases`_ to log your exper
 Weights and Biases is an online service for tracking your experiments which is
 free for academic usage.
 To set this up, you need to install the wandb pip package, and you'll need to
-`create a Weights and Biases account <wandb-signup_>`_ if you don't already have one::
+`create a Weights and Biases account <wandb-signup_>`_ if you don't already have one:
+
+.. code-block:: bash
 
     # (On v.vectorinstitute.ai)
     # You need to run the conda setup instructions that miniconda added to
@@ -231,7 +245,9 @@ Project one-time set-up
 
 Run this code block once every time you start a new project from this template.
 Change ENVNAME to equal the name of your project. This code will then create a
-new virtual environment to use for the project::
+new virtual environment to use for the project:
+
+.. code-block:: bash
 
     # (On v.vectorinstitute.ai)
     # You need to run the conda setup instructions that miniconda added to
@@ -262,7 +278,9 @@ new virtual environment to use for the project::
 Resuming work on an existing project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run this code block when you want to resume work on an existing project::
+Run this code block when you want to resume work on an existing project:
+
+.. code-block:: bash
 
     # (On v.vectorinstitute.ai)
     # Run conda setup in ~/.bashrc if you it hasn't already been run in this
@@ -293,7 +311,9 @@ Set-up
 #. If you haven't already, then follow the `Vector one-time set-up`_
    instructions.
 
-#. Then clone the repository::
+#. Then clone the repository:
+
+   .. code-block:: bash
 
         git clone git@github.com:scottclowe/pytorch-experiment-template.git
         cd pytorch-experiment-template
@@ -542,7 +562,9 @@ When using multiple nodes, the output from each node will be saved to a
 separate file: ``slogs-inner/JOBNAME__JOBID_ARRAYID-NODERANK.out``.
 
 You can monitor the progress of a job that is currently running by monitoring
-the contents of its log file. For example::
+the contents of its log file. For example:
+
+.. code-block:: bash
 
     tail -n 50 -f slogs/JOBNAME__JOBID_ARRAYID.out
 
