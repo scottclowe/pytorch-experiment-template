@@ -619,7 +619,7 @@ def run(config):
         else:
             print(f"  Duration ...........{timing_stats['val']:11.2f} seconds")
         print(f"  Throughput .........{eval_stats['throughput']:11.2f} samples/sec")
-        print(f"  Loss ...............{eval_stats['loss']:14.5f}")
+        print(f"  Cross-entropy ......{eval_stats['cross-entropy']:14.5f}")
         print(f"  Accuracy ...........{eval_stats['accuracy']:11.2f} %")
 
         # Save model ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
