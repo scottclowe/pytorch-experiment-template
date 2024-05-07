@@ -23,8 +23,6 @@ the `Creating a git repository using this template`_ instructions first.
 Creating a git repository using this template
 ---------------------------------------------
 
-.. highlight:: bash
-
 When creating a new repository from this template, these are the steps to follow:
 
 #. *Don't click the fork button.*
@@ -95,8 +93,6 @@ When creating a new repository from this template, these are the steps to follow
 
     Which will make changes in the following places.
 
-    .. highlight:: python
-
     - In ``setup.py``, `L51 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/setup.py#L51>`__::
 
         exec(read("template_experiment/__meta__.py"), meta)
@@ -130,8 +126,6 @@ When creating a new repository from this template, these are the steps to follow
     - In ``slurm/notebook.slrm``, `L16 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/notebook.slrm#L16>`__::
 
         PROJECT_NAME="template-experiment"
-
-    .. highlight:: bash
 
 #.  Swap out the contents of ``README.rst`` with an initial description of your project.
     If you prefer, you can use markdown (``README.md``) instead of rST::
@@ -791,8 +785,6 @@ Contributions are welcome! If you can see a way to improve this template:
 
 Or to report a bug or request something new, make an issue.
 
-
-.. highlight:: python
 
 .. |SLURM| image:: https://img.shields.io/badge/scheduler-SLURM-40B1EC
    :target: https://slurm.schedmd.com/
