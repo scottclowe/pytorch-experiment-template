@@ -148,7 +148,7 @@ When creating a new repository from this template, these are the steps to follow
     .. code-block:: bash
 
       git add .
-      git commit --amend
+      git commit --amend -m "Initial commit"
       git push --force
 
 .. _PEP-8: https://www.python.org/dev/peps/pep-0008/
