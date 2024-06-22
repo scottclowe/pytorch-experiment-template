@@ -4,7 +4,7 @@ max-line-length = 120
 # E402: Module level import not at top of file. Violated by lazy imports.
 # D100-D107: Missing docstrings
 # D200: One-line docstring should fit on one line with quotes.
-extend-ignore = E203,E402,F401,D100,D101,D102,D103,D104,D105,D106,D107,D200
+extend-ignore = E203,E402,D100,D101,D102,D103,D104,D105,D106,D107,D200
 docstring-convention = numpy
 # F401: Module imported but unused.
 # Ignore missing docstrings within unit testing functions.
