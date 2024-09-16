@@ -108,12 +108,12 @@ When creating a new repository from this template, these are the steps to follow
 
         name = "template-experiment"
 
-    - In ``train.py``, `L17-18 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L17-18>`__::
+    - In ``train.py``, `L18-19 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L18-19>`__::
 
         from template_experiment import data_transformations, datasets, encoders, utils
         from template_experiment.evaluation import evaluate
 
-    - In ``train.py``, `L1321 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L1321>`__::
+    - In ``train.py``, `L1260 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/template_experiment/train.py#L1260-L1265>`__::
 
         group.add_argument(
             "--wandb-project",
@@ -130,7 +130,7 @@ When creating a new repository from this template, these are the steps to follow
 
         PROJECT_NAME="template-experiment"
 
-    - In ``slurm/notebook.slrm``, `L16 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/notebook.slrm#L16>`__::
+    - In ``slurm/notebook.slrm``, `L15 <https://github.com/scottclowe/pytorch-experiment-template/blob/master/slurm/notebook.slrm#L15>`__::
 
         PROJECT_NAME="template-experiment"
 
