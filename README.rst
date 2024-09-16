@@ -95,8 +95,8 @@ When creating a new repository from this template, these are the steps to follow
 
     .. code-block:: bash
 
-        sed -i "s/template_experiment/$PROJ_DIRN/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm .pre-commit-config.yaml
-        sed -i "s/template-experiment/$PROJ_HYPH/" "$PROJ_DIRN"/*.py setup.py slurm/*.slrm .pre-commit-config.yaml
+        sed -i "s/template_experiment/$PROJ_DIRN/" "$PROJ_DIRN"/*.py setup.py pyproject.toml slurm/*.slrm .pre-commit-config.yaml
+        sed -i "s/template-experiment/$PROJ_HYPH/" "$PROJ_DIRN"/*.py setup.py pyproject.toml slurm/*.slrm .pre-commit-config.yaml
 
     Which will make changes in the following places.
 

@@ -8,3 +8,4 @@ target-version = ["py38"]
 
 [tool.isort]
 src_paths = ["template_experiment"]
+known_first_party = ["template_experiment"]
