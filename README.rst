@@ -149,7 +149,7 @@ When creating a new repository from this template, these are the steps to follow
 
       git add .
       git commit --amend -m "Initial commit"
-      git push --force
+      git push --force-with-lease
 
 .. _PEP-8: https://www.python.org/dev/peps/pep-0008/
 .. _open source license: https://choosealicense.com/
