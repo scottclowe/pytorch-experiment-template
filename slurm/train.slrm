@@ -233,9 +233,6 @@ echo "WORLD_SIZE = $WORLD_SIZE"
 # This is needed to print debug info from NCCL, can be removed if all goes well
 # export NCCL_DEBUG=INFO
 
-# This is needed to avoid NCCL to use ifiniband, which the cluster does not have
-export NCCL_IB_DISABLE=1
-
 # This is to tell NCCL to use bond interface for network communication
 if [[ "${SLURM_JOB_PARTITION}" == "t4v2" ]] || [[ "${SLURM_JOB_PARTITION}" == "rtx6000" ]];
 then
